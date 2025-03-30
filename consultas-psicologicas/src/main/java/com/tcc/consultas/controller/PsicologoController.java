@@ -34,4 +34,9 @@ public class PsicologoController {
     public void deletar(@PathVariable Long id) {
         psicologoService.deletar(id);
     }
+
+    @PutMapping("/{id}")
+    public Psicologo atualizarPsicologo(@PathVariable Long id, @RequestBody Psicologo psicologoAtualizado) {
+        return psicologoService.atualizarPsicologo(id, psicologoAtualizado);
+    }
 }

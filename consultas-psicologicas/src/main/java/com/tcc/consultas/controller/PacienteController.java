@@ -3,6 +3,7 @@ package com.tcc.consultas.controller;
 import com.tcc.consultas.model.Paciente;
 import com.tcc.consultas.service.PacienteService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -35,4 +36,11 @@ public class PacienteController {
     public void deletar(@PathVariable Long id) {
         pacienteService.deletar(id);
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Paciente> atualizarPaciente(@PathVariable Long id, @RequestBody Paciente pacienteAtualizado) {
+        Paciente paciente = pacienteService.atualizarPaciente(id, pacienteAtualizado);
+        return ResponseEntity.ok(paciente);
+    }
+
 }

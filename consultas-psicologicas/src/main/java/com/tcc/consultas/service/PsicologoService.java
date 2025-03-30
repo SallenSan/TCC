@@ -1,6 +1,7 @@
 package com.tcc.consultas.service;
 
 
+import com.tcc.consultas.model.Paciente;
 import com.tcc.consultas.model.Psicologo;
 import com.tcc.consultas.repository.PsicologoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +29,16 @@ public class PsicologoService {
 
     public void deletar(Long id) {
         psicologoRepository.deleteById(id);
+    }
+
+    public Psicologo atualizarPsicologo(Long id, Psicologo psicologoAtualizado) {
+        return psicologoRepository.findById(id).map(psicologo -> {
+            psicologo.setNome(psicologoAtualizado.getNome());
+            psicologo.setEmail(psicologoAtualizado.getEmail());
+            psicologo.setTelefone(psicologoAtualizado.getTelefone());
+            psicologo.setEspecialidade(psicologoAtualizado.getEspecialidade());
+            return psicologoRepository.save(psicologo);
+        }).orElseThrow(() -> new RuntimeException("Psicólogo não encontrado!"));
     }
 }
 

@@ -28,4 +28,13 @@ public class PacienteService {
     public void deletar(Long id) {
         pacienteRepository.deleteById(id);
     }
+    public Paciente atualizarPaciente(Long id, Paciente pacienteAtualizado) {
+        return pacienteRepository.findById(id).map(paciente -> {
+            paciente.setNome(pacienteAtualizado.getNome());
+            paciente.setEmail(pacienteAtualizado.getEmail());
+            paciente.setTelefone(pacienteAtualizado.getTelefone());
+            paciente.setDataNascimento(pacienteAtualizado.getDataNascimento());
+            return pacienteRepository.save(paciente);
+        }).orElseThrow(() -> new RuntimeException("Paciente não encontrado!"));
+    }
 }
