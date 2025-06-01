@@ -24,6 +24,9 @@ public class Psicologo {
     private String telefone;
     @JsonProperty("especialidade")
     private String especialidade;
+    @Column(nullable = false, unique = true)
+    private String crp; // Registro profissional
+
 
     @OneToMany(mappedBy = "psicologo")
     private List<Consulta> consultas;
