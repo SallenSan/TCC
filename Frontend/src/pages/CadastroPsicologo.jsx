@@ -23,7 +23,7 @@ const CadastroPsicologo = () => {
     let { name, value } = e.target;
 
     if (name === 'telefone') {
-      value = value.replace(/\D/g, ''); // Remove caracteres não numéricos
+      value = value.replace(/\D/g, '');
       if (value.length > 10) {
         value = value.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3');
       } else {
@@ -59,7 +59,7 @@ const CadastroPsicologo = () => {
     }
 
     try {
-      await axios.post('/api/psicologos', formData);
+      await axios.post('http://localhost:8080/api/psicologos', formData); // <- URL corrigida
       setMensagem('Cadastro realizado com sucesso!');
       setFormData({ nome: '', email: '', senha: '', telefone: '', especialidade: '', crp: '' });
     } catch (error) {

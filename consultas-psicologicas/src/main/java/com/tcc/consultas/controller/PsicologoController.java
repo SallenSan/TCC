@@ -1,8 +1,9 @@
 package com.tcc.consultas.controller;
 
+import com.tcc.consultas.dto.PsicologoDTO;
 import com.tcc.consultas.model.Psicologo;
-import com.tcc.consultas.repository.PsicologoRepository;
 import com.tcc.consultas.service.PsicologoService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,15 +12,14 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Optional;
 
+@CrossOrigin(origins = "http://localhost:5173")
 @RestController
-@RequestMapping("/psicologos")
+@RequestMapping("/api/psicologos")
 public class PsicologoController {
 
     @Autowired
     private PsicologoService psicologoService;
-
-    @Autowired
-    private PsicologoRepository psicologoRepository;
+    private PsicologoDTO psicologoDTO;
 
     @GetMapping
     public List<Psicologo> listarTodos() {
@@ -34,23 +34,12 @@ public class PsicologoController {
     }
 
     @PostMapping
-    public ResponseEntity<?> salvar(@RequestBody Psicologo psicologo) {
+    public ResponseEntity<?> salvar(@RequestBody @Valid PsicologoDTO dto) {
         try {
-            // Verificações básicas (pode ser melhorado com DTO + Bean Validation futuramente)
-            if (psicologo.getNome() == null || psicologo.getEmail() == null || psicologo.getSenha() == null ||
-                    psicologo.getTelefone() == null || psicologo.getEspecialidade() == null || psicologo.getCrp() == null) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body("Todos os campos são obrigatórios.");
-            }
-
-            // Verifica se já existe um psicólogo com o mesmo CRP
-            if (psicologoRepository.findAll().stream().anyMatch(p -> p.getCrp().equals(psicologo.getCrp()))) {
-                return ResponseEntity.status(HttpStatus.CONFLICT)
-                        .body("Já existe um psicólogo com este CRP.");
-            }
-
-            Psicologo salvo = psicologoRepository.save(psicologo);
+            Psicologo salvo = psicologoService.salvar(dto);
             return ResponseEntity.status(HttpStatus.CREATED).body(salvo);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Erro ao salvar psicólogo: " + e.getMessage());
@@ -59,7 +48,7 @@ public class PsicologoController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletar(@PathVariable Long id) {
-        if (psicologoRepository.existsById(id)) {
+        if (psicologoService.existePorId(id)) {
             psicologoService.deletar(id);
             return ResponseEntity.noContent().build();
         } else {
@@ -68,16 +57,12 @@ public class PsicologoController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> atualizarPsicologo(@PathVariable Long id, @RequestBody Psicologo psicologoAtualizado) {
-        Optional<Psicologo> existente = psicologoService.buscarPorId(id);
-        if (existente.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-
+    public ResponseEntity<?> atualizar(@PathVariable Long id, @RequestBody @Valid PsicologoDTO dto) {
         try {
-            psicologoAtualizado.setId(id);
-            Psicologo atualizado = psicologoService.atualizarPsicologo(id, psicologoAtualizado);
+            Psicologo atualizado = psicologoService.atualizar(id, dto);
             return ResponseEntity.ok(atualizado);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Erro ao atualizar psicólogo: " + e.getMessage());
