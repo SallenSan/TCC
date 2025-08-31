@@ -1,35 +1,33 @@
 package com.tcc.consultas.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
-import lombok.*;
+import jakarta.validation.constraints.NotBlank;
+import lombok.Data;
 
 import java.util.List;
 
-@Entity
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
+@Entity
+@Table(name = "psicologos")
 public class Psicologo {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @JsonProperty("nome")
+    @NotBlank
     private String nome;
-    @JsonProperty("email")
-    private String email;
-    @JsonProperty("senha")
-    private String senha;
-    @JsonProperty("telefone")
-    private String telefone;
-    @JsonProperty("especialidade")
+
+    @NotBlank
     private String especialidade;
-    @Column(nullable = false, unique = true)
-    private String crp; // Registro profissional
 
+    private String telefone;
+    private String crp;
 
-    @OneToMany(mappedBy = "psicologo")
+    @OneToOne
+    @JoinColumn(name = "usuario_id", unique = true)
+    private Usuario usuario;
+
+    @OneToMany(mappedBy = "psicologo", cascade = CascadeType.ALL)
     private List<Consulta> consultas;
+
+
 }

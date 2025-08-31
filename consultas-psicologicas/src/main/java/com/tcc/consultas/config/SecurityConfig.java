@@ -20,9 +20,10 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/pacientes/**").permitAll()
-                        .requestMatchers("/api/consultas/**").permitAll()
-                        .requestMatchers("/api/psicologos/**").permitAll()
+                        .requestMatchers("/pacientes/**").permitAll()
+                        .requestMatchers("/consultas/**").permitAll()
+                        .requestMatchers("/psicologos/**").permitAll()
+                        .requestMatchers("/teste-email").permitAll()
                         .anyRequest().authenticated()
                 )
                 .cors(withDefaults());
@@ -33,7 +34,11 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(Arrays.asList("http://localhost:5173")); // Porta correta do frontend
+        config.setAllowedOrigins(Arrays.asList(
+                "http://localhost:5173",     // Frontend Angular/Vite
+                "http://127.0.0.1:5500",    // Live Server
+                "http://localhost:5500"     // Variante localhost Live Server
+        ));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(Arrays.asList("*"));
         config.setAllowCredentials(true);

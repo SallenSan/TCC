@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Cadastro de Consultas</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 20px; }
+        h1 { text-align: center; }
+        nav { text-align: center; margin-bottom: 20px; }
+        nav button { margin: 0 10px; padding: 10px 15px; background: #3399ff; color: #fff; border: none; border-radius: 5px; cursor: pointer; }
+        nav button:hover { background: #0077e6; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0px 2px 6px rgba(0,0,0,0.1); }
+        form { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+        input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+        button.salvar { background: #3399ff; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; width: 100%; }
+        button.salvar:disabled { background: #cccccc; cursor: not-allowed; }
+        ul { list-style: none; padding: 0; }
+        li { background: #f0f8ff; margin-bottom: 5px; padding: 8px; border-radius: 5px; }
+        .msg { text-align: center; font-weight: bold; margin-bottom: 10px; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Sistema de Consultas Psicológicas</h1>
+    
+    <nav>
+        <button onclick="window.location.href='pacientes.html'">Pacientes</button>
+        <button onclick="window.location.href='psicologos.html'">Psicólogos</button>
+        <button onclick="window.location.href='consultas.html'">Consultas</button>
+    </nav>
+    
+    <div class="container">
+        <h2>Consultas</h2>
+
+        <div id="msg" class="msg"></div>
+
+        <form id="consultaForm">
+            <input type="number" id="pacienteId" placeholder="ID do Paciente" required>
+            <input type="number" id="psicologoId" placeholder="ID do Psicólogo" required>
+            <input type="datetime-local" id="dataHora" required>
+            <button type="submit" class="salvar" id="salvarBtn">Salvar</button>
+        </form>
+
+        <ul id="listaConsultas"></ul>
+    </div>
+
+    <script>
+        const apiUrl = "http://localhost:8080/consultas";
+        const form = document.getElementById("consultaForm");
+        const lista = document.getElementById("listaConsultas");
+        const msg = document.getElementById("msg");
+        const salvarBtn = document.getElementById("salvarBtn");
+
+        async function carregarConsultas() {
+            const res = await fetch(apiUrl);
+            const data = await res.json();
+            lista.innerHTML = "";
+            data.forEach(c => {
+                const li = document.createElement("li");
+                li.textContent = `Consulta ID: ${c.id} - Paciente ${c.pacienteId} - Psicólogo ${c.psicologoId} - Data: ${c.dataHora}`;
+                lista.appendChild(li);
+            });
+        }
+
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            salvarBtn.disabled = true;
+            msg.textContent = "";
+
+            const consulta = {
+                pacienteId: parseInt(document.getElementById("pacienteId").value),
+                psicologoId: parseInt(document.getElementById("psicologoId").value),
+                dataHora: document.getElementById("dataHora").value
+            };
+
+            try {
+                const res = await fetch(apiUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(consulta)
+                });
+
+                if (res.ok) {
+                    msg.textContent = "✅ Consulta cadastrada com sucesso!";
+                    msg.className = "msg success";
+                    form.reset();
+                    carregarConsultas();
+                } else {
+                    msg.textContent = "❌ Erro ao cadastrar consulta!";
+                    msg.className = "msg error";
+                }
+            } catch (error) {
+                msg.textContent = "❌ Falha na comunicação com o servidor!";
+                msg.className = "msg error";
+            }
+
+            salvarBtn.disabled = false;
+        });
+
+        carregarConsultas();
+    </script>
+</body>
+</html>

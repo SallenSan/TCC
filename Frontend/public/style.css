@@ -1,0 +1,129 @@
+:root {
+  --primary: #2d89ef;
+  --primary-hover: #1d5cbf;
+  --bg: #f5f5f5;
+  --text: #222;
+  --muted: #666;
+  --border: #ddd;
+  --card: #fff;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+h1, h2 { text-align: center; margin-top: 24px; }
+
+nav ul {
+  list-style: none;
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  padding: 0;
+}
+
+nav a {
+  display: inline-block;
+  text-decoration: none;
+  color: #fff;
+  background: var(--primary);
+  padding: 10px 16px;
+  border-radius: 8px;
+  transition: background .2s;
+}
+
+nav a:hover { background: var(--primary-hover); }
+
+.container {
+  max-width: 1100px;
+  margin: 24px auto;
+  padding: 0 16px;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 4px 10px rgba(0,0,0,.05);
+}
+
+form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+form .full { grid-column: 1 / -1; }
+
+label {
+  font-size: 14px;
+  color: var(--muted);
+  display: block;
+  margin-bottom: 6px;
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  outline: none;
+}
+
+textarea { min-height: 80px; resize: vertical; }
+
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+button {
+  padding: 10px 14px;
+  border: none;
+  border-radius: 8px;
+  background: var(--primary);
+  color: #fff;
+  cursor: pointer;
+}
+
+button.secondary { background: #aaa; }
+button.danger { background: #e74c3c; }
+button:hover { background: var(--primary-hover); }
+button.secondary:hover { background: #888; }
+button.danger:hover { background: #c0392b; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+th, td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+th { background: #fafafa; }
+tr:hover td { background: #fcfcff; }
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #eef3ff;
+  border: 1px solid #dbe6ff;
+  font-size: 12px;
+}

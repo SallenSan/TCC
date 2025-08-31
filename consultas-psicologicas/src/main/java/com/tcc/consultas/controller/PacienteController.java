@@ -2,45 +2,42 @@ package com.tcc.consultas.controller;
 
 import com.tcc.consultas.model.Paciente;
 import com.tcc.consultas.service.PacienteService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
+@CrossOrigin(origins = "http://localhost:5173")
 @RestController
 @RequestMapping("/pacientes")
 public class PacienteController {
+    private final PacienteService pacienteService;
 
-    @Autowired
-    private PacienteService pacienteService;
+    public PacienteController(PacienteService pacienteService) {
+        this.pacienteService = pacienteService;
+    }
+
+    @PostMapping
+    public Paciente criar(@RequestBody Paciente paciente) {
+        return pacienteService.salvar(paciente);
+    }
 
     @GetMapping
-    public List<Paciente> listarTodos() {
+    public List<Paciente> listar() {
         return pacienteService.listarTodos();
     }
 
     @GetMapping("/{id}")
-    public Optional<Paciente> buscarPorId(@PathVariable Long id) {
+    public Paciente buscar(@PathVariable Long id) {
         return pacienteService.buscarPorId(id);
     }
 
-    @PostMapping
-    public Paciente salvar(@RequestBody Paciente paciente) {
-        System.out.println("Paciente recebido: " + paciente);
-        return pacienteService.salvar(paciente);
+    @PutMapping("/{id}")
+    public Paciente atualizar(@PathVariable Long id, @RequestBody Paciente paciente) {
+        return pacienteService.atualizar(id, paciente);
     }
 
     @DeleteMapping("/{id}")
     public void deletar(@PathVariable Long id) {
         pacienteService.deletar(id);
     }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<Paciente> atualizarPaciente(@PathVariable Long id, @RequestBody Paciente pacienteAtualizado) {
-        Paciente paciente = pacienteService.atualizarPaciente(id, pacienteAtualizado);
-        return ResponseEntity.ok(paciente);
-    }
-
 }

@@ -2,32 +2,38 @@ package com.tcc.consultas.controller;
 
 import com.tcc.consultas.model.Consulta;
 import com.tcc.consultas.service.ConsultaService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
+@CrossOrigin(origins = "http://localhost:5173")
 @RestController
 @RequestMapping("/consultas")
 public class ConsultaController {
+    private final ConsultaService consultaService;
 
-    @Autowired
-    private ConsultaService consultaService;
+    public ConsultaController(ConsultaService consultaService) {
+        this.consultaService = consultaService;
+    }
+
+    @PostMapping
+    public Consulta criar(@RequestBody Consulta consulta) {
+        return consultaService.salvar(consulta);
+    }
 
     @GetMapping
-    public List<Consulta> listarTodas() {
+    public List<Consulta> listar() {
         return consultaService.listarTodas();
     }
 
     @GetMapping("/{id}")
-    public Optional<Consulta> buscarPorId(@PathVariable Long id) {
+    public Consulta buscar(@PathVariable Long id) {
         return consultaService.buscarPorId(id);
     }
 
-    @PostMapping
-    public Consulta salvar(@RequestBody Consulta consulta) {
-        return consultaService.salvar(consulta);
+    @PutMapping("/{id}")
+    public Consulta atualizar(@PathVariable Long id, @RequestBody Consulta consulta) {
+        return consultaService.atualizar(id, consulta);
     }
 
     @DeleteMapping("/{id}")
