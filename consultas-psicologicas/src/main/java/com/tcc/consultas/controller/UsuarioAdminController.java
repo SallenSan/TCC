@@ -1,7 +1,7 @@
 package com.tcc.consultas.controller;
 
-import com.tcc.consultas.model.Usuario;
-import com.tcc.consultas.service.UsuarioService;
+import com.tcc.consultas.model.UsuarioAdmin;
+import com.tcc.consultas.service.UsuarioAdminService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -9,31 +9,31 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/usuarios")
-public class UsuarioController {
+@RequestMapping("/usuario_admin")
+public class UsuarioAdminController {
 
     @Autowired
-    private UsuarioService usuarioService;
+    private UsuarioAdminService usuarioService;
 
     @PostMapping
-    public Usuario criar(@RequestBody Usuario usuario) {
+    public UsuarioAdmin criar(@RequestBody UsuarioAdmin usuario) {
         return usuarioService.salvar(usuario);
     }
 
     @GetMapping
-    public List<Usuario> listar() {
+    public List<UsuarioAdmin> listar() {
         return usuarioService.listarTodos();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Usuario> buscar(@PathVariable Long id) {
+    public ResponseEntity<UsuarioAdmin> buscar(@PathVariable Long id) {
         return usuarioService.buscarPorId(id)
                 .map(ResponseEntity::ok)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Usuario> atualizar(@PathVariable Long id, @RequestBody Usuario usuario) {
+    public ResponseEntity<UsuarioAdmin> atualizar(@PathVariable Long id, @RequestBody UsuarioAdmin usuario) {
         return ResponseEntity.ok(usuarioService.atualizar(id, usuario));
     }
 

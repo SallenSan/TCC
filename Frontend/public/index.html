@@ -1,51 +1,200 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Consultas Psicológicas</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f5f5f5;
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-        .menu-container {
-            text-align: center;
-            background: white;
-            padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0px 2px 10px rgba(0,0,0,0.1);
-        }
-        h1 {
-            margin-bottom: 30px;
-        }
-        .menu-container button {
-            margin: 10px;
-            padding: 15px 25px;
-            font-size: 16px;
-            background: #3399ff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .menu-container button:hover {
-            background: #0077e6;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <title>Sistema de Consultas Psicológicas</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f9f6fc;
+      --card: #fff;
+      --text: #2d2a32;
+      --muted: #6b6475;
+      --primary: #c8a2c8;
+      --primary-h: #b089b0;
+      --shadow: 0 8px 24px rgba(0, 0, 0, .08);
+      --ok: #1e9e63;
+      --err: #c0392b;
+    }
+
+    html,
+    body {
+      height: 100%
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center
+    }
+
+    .box {
+      width: min(520px, 92vw);
+      background: var(--card);
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: var(--shadow);
+      text-align: center
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      color: #5e4b8a
+    }
+
+    p.muted {
+      color: var(--muted);
+      margin-top: 0
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      margin: 18px 0 6px
+    }
+
+    .role {
+      padding: 14px 16px;
+      border: 1px solid #e5dff0;
+      background: #fbf9ff;
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600
+    }
+
+    .role:hover {
+      background: #f3ecfa
+    }
+
+    .login {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-top: 12px
+    }
+
+    input {
+      padding: 12px;
+      border: 1px solid #d7cfe4;
+      border-radius: 10px;
+      background: transparent;
+      color: var(--text)
+    }
+
+    .btn {
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      background: var(--primary);
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer
+    }
+
+    .btn:disabled {
+      opacity: .6;
+      cursor: not-allowed
+    }
+
+    .toast {
+      margin-top: 8px;
+      font-weight: 700
+    }
+
+    .ok {
+      color: var(--ok)
+    }
+
+    .err {
+      color: var(--err)
+    }
+  </style>
 </head>
+
 <body>
-    <div class="menu-container">
-        <h1>Sistema de Consultas Psicológicas</h1>
-        <button onclick="window.location.href='pacientes.html'">Pacientes</button>
-        <button onclick="window.location.href='psicologos.html'">Psicólogos</button>
-        <button onclick="window.location.href='consultas.html'">Consultas</button>
+  <div class="box">
+    <h1>Sistema de Consultas</h1>
+    <p class="muted">Escolha seu perfil e faça login. Apenas usuários <b>já cadastrados</b> podem entrar.</p>
+
+    <div class="grid" id="roles">
+      <div class="role" data-role="Admin"><i class="fa-solid fa-user-gear"></i> Secretária/Admin</div>
+      <div class="role" data-role="Paciente"><i class="fa-solid fa-user"></i> Paciente</div>
+      <div class="role" data-role="Psicologo"><i class="fa-solid fa-user-doctor"></i> Psicólogo</div>
     </div>
+
+    <div class="login">
+      <input type="email" id="email" placeholder="Seu e-mail" autocomplete="email" required>
+      <input type="password" id="senha" placeholder="Senha (opcional para Paciente/Psicólogo)"
+        autocomplete="current-password">
+      <button class="btn" id="entrarBtn" disabled>Entrar</button>
+      <div class="toast" id="toast"></div>
+    </div>
+  </div>
+
+  <script>
+    const API = 'http://localhost:8080';
+    const toast = (t, ok = true) => { const el = document.getElementById('toast'); el.textContent = t; el.className = 'toast ' + (ok ? 'ok' : 'err'); };
+
+    let selectedRole = null;
+    document.querySelectorAll('.role').forEach(el => {
+      el.addEventListener('click', () => {
+        document.querySelectorAll('.role').forEach(r => r.style.outline = 'none');
+        el.style.outline = '3px solid #e0c7e0';
+        selectedRole = el.dataset.role;
+        document.getElementById('entrarBtn').disabled = false;
+      });
+    });
+
+    document.getElementById('entrarBtn').addEventListener('click', async () => {
+      const email = (document.getElementById('email').value || '').trim().toLowerCase();
+      const senha = (document.getElementById('senha').value || ''); // ignorada para Admin (hash no backend)
+      if (!selectedRole) { toast('Escolha um perfil.', false); return; }
+      if (!email || !email.includes('@')) { toast('Informe um e-mail válido.', false); return; }
+
+      try {
+        if (selectedRole === 'Paciente') {
+          const r = await fetch(API + '/pacientes'); const arr = await r.json();
+          const u = arr.find(p => (p.email || '').toLowerCase() === email);
+          if (!u) { toast('Paciente não encontrado.', false); return; }
+          // Se tiver senha em texto em Paciente, valida; senão, deixa entrar
+          if ('senha' in u && u.senha) { if (u.senha !== senha) { toast('Senha incorreta.', false); return; } }
+          localStorage.setItem('role', 'Paciente'); localStorage.setItem('email', u.email); localStorage.setItem('userId', u.id);
+          toast('Entrando...'); location.href = 'paciente-portal.html';
+        }
+
+        if (selectedRole === 'Psicologo') {
+          const r = await fetch(API + '/psicologos'); const arr = await r.json();
+          const u = arr.find(p => (p.email || '').toLowerCase() === email);
+          if (!u) { toast('Psicólogo não encontrado.', false); return; }
+          if ('senha' in u && u.senha) { if (u.senha !== senha) { toast('Senha incorreta.', false); return; } }
+          localStorage.setItem('role', 'Psicologo'); localStorage.setItem('email', u.email); localStorage.setItem('userId', u.id);
+          toast('Entrando...'); location.href = 'psicologo-portal.html';
+        }
+
+        if (selectedRole === 'Admin') {
+          // Admin agora vem de /usuario-admin
+          const r = await fetch(API + '/usuario-admin'); const arr = await r.json();
+          const u = arr.find(a => (a.email || '').toLowerCase() === email);
+          if (!u) { toast('Admin não encontrado.', false); return; }
+          // NÃO validamos senha aqui porque no banco está hash (bcrypt). Se quiser validar, crie /auth/login no backend.
+          localStorage.setItem('role', 'Admin'); localStorage.setItem('email', u.email); localStorage.setItem('userId', u.id);
+          toast('Entrando...'); location.href = 'admin.html';
+        }
+      } catch (e) {
+        toast('Falha ao conectar no backend.', false);
+      }
+    });
+  </script>
 </body>
+
 </html>

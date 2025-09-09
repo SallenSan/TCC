@@ -19,28 +19,37 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
+                .cors(withDefaults())
                 .authorizeHttpRequests(auth -> auth
+                        // públicos (ajuste conforme sua necessidade)
                         .requestMatchers("/pacientes/**").permitAll()
-                        .requestMatchers("/consultas/**").permitAll()
                         .requestMatchers("/psicologos/**").permitAll()
+                        .requestMatchers("/consultas/**").permitAll()
                         .requestMatchers("/teste-email").permitAll()
-                        .anyRequest().authenticated()
+                        .requestMatchers("/usuario-admin").permitAll()
+                        // troca de senha requer usuário autenticado
+                        .requestMatchers("/auth/change-password").authenticated()
+                        // o restante, por ora, liberado
+                        .anyRequest().permitAll()
                 )
-                .cors(withDefaults());
+                // HTTP Basic para autenticação da troca de senha
+                .httpBasic(withDefaults());
 
         return http.build();
     }
 
+    // CORS — importante permitir Authorization
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(Arrays.asList(
-                "http://localhost:5173",     // Frontend Angular/Vite
-                "http://127.0.0.1:5500",    // Live Server
-                "http://localhost:5500"     // Variante localhost Live Server
+                "http://127.0.0.1:5500",
+                "http://127.0.0.1:5501",
+                "http://localhost:5500",
+                "http://localhost:5501"
         ));
-        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(Arrays.asList("*"));
+        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        config.setAllowedHeaders(Arrays.asList("Content-Type", "Authorization", "Accept"));
         config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

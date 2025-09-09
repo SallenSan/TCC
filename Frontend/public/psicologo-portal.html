@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Psicólogo • Minha Agenda</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+  <style>
+    :root{ --bg:#f9f6fc; --card:#fff; --text:#2d2a32; --muted:#6b6475; --primary:#c8a2c8; --primary-h:#b089b0; --line:#e8e2f1; --ok:#1e9e63; --err:#c0392b; --shadow:0 8px 24px rgba(0,0,0,.08); }
+    body{margin:0; font-family:Arial, Helvetica, sans-serif; background:var(--bg); color:var(--text)}
+    header{display:flex; align-items:center; justify-content:space-between; padding:14px 18px; background:var(--card); box-shadow:var(--shadow); position:sticky; top:0; z-index:5;}
+    .brand{font-weight:800; color:#5e4b8a}
+    .actions{display:flex; gap:10px; align-items:center}
+    .btn{padding:10px 14px; border:none; border-radius:9px; background:var(--primary); color:#fff; cursor:pointer; font-weight:700}
+    .btn:hover{background:var(--primary-h)} .btn.secondary{background:#9aa2ac} .btn.err{background:#c0392b}
+    .wrap{max-width:1100px; margin:18px auto; padding:0 16px; display:grid; gap:16px}
+    .card{background:var(--card); border-radius:14px; box-shadow:var(--shadow); padding:16px}
+    .row{display:flex; gap:8px; flex-wrap:wrap}
+    input, select, textarea{padding:10px; border:1px solid #d7cfe4; background:transparent; color:var(--text); border-radius:10px}
+    table{width:100%; border-collapse:collapse}
+    th,td{border-bottom:1px solid var(--line); padding:10px; text-align:left; vertical-align:top}
+    .tag{padding:4px 8px; border-radius:999px; font-size:12px; background:#efe7f6}
+    .muted{color:var(--muted)}
+    .toast{position:fixed; right:16px; bottom:16px; background:var(--card); color:var(--text); padding:12px 14px; border-radius:10px; box-shadow:var(--shadow); display:none}
+    dialog{border:none; border-radius:12px; padding:0; width:min(560px, 92vw); box-shadow:var(--shadow); background:var(--card); color:var(--text)}
+    dialog .dlg-head{padding:14px 16px; border-bottom:1px solid var(--line); font-weight:800}
+    dialog .dlg-body{padding:14px 16px}
+    dialog .dlg-foot{padding:12px 16px; border-top:1px solid var(--line); display:flex; justify-content:flex-end; gap:10px}
+    .menu{position:relative}
+    .dropdown{position:absolute; right:0; top:44px; background:var(--card); box-shadow:var(--shadow); border-radius:10px; display:none; min-width:190px}
+    .dropdown button{display:block; width:100%; text-align:left; background:none; border:none; padding:10px 12px; cursor:pointer}
+    .dropdown button:hover{background:#efe7f6}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand"><i class="fa-solid fa-user-doctor"></i> Psicólogo • Minha Agenda</div>
+    <div class="actions">
+      <div class="menu">
+        <button class="btn" id="perfilBtn"><i class="fa-regular fa-user"></i> Perfil</button>
+        <div class="dropdown" id="perfilDrop">
+          <button id="alterarSenhaBtn"><i class="fa-solid fa-key"></i> Alterar senha</button>
+        </div>
+      </div>
+      <button class="btn" onclick="location.href='index.html'"><i class="fa-solid fa-house"></i></button>
+      <button class="btn err" id="logoutBtn"><i class="fa-solid fa-right-from-bracket"></i> Sair</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="card">
+      <h2>Bem-vindo(a)</h2>
+      <div class="muted">Sessão de: <b id="sessEmail">—</b></div>
+    </section>
+
+    <section class="card">
+      <h2>Minha Agenda</h2>
+      <div class="row" style="margin:8px 0">
+        <input type="date" id="fIni">
+        <input type="date" id="fFim">
+        <button class="btn secondary" id="btnFiltrar"><i class="fa-solid fa-filter"></i> Filtrar</button>
+        <button class="btn secondary" id="btnLimpar"><i class="fa-solid fa-filter-circle-xmark"></i> Limpar</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Data/Hora</th>
+            <th>Paciente</th>
+            <th>Status</th>
+            <th>Observações</th>
+            <th style="width:160px">Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tbConsultas"></tbody>
+      </table>
+      <small class="muted">Dica: clique em “Obs.” para editar rapidamente as observações da consulta.</small>
+    </section>
+
+    <section class="card">
+      <h2>Adicionar/Editar Observações</h2>
+      <div class="row">
+        <input id="obsId" placeholder="ID da consulta" disabled style="max-width:140px">
+        <textarea id="obsTexto" placeholder="Escreva aqui suas observações..." rows="3" style="flex:1; min-width:260px"></textarea>
+        <button class="btn" id="obsSalvar"><i class="fa-solid fa-floppy-disk"></i> Salvar</button>
+        <button class="btn secondary" id="obsLimpar"><i class="fa-solid fa-xmark"></i> Limpar</button>
+      </div>
+      <small class="muted">Você pode selecionar uma consulta na tabela para preencher automaticamente.</small>
+    </section>
+  </main>
+
+  <!-- MODAL ALTERAR SENHA -->
+  <dialog id="dlgSenha">
+    <div class="dlg-head">Alterar senha</div>
+    <div class="dlg-body" style="display:grid; gap:10px">
+      <input type="password" id="sAtual" placeholder="Senha atual (se houver)">
+      <input type="password" id="sNova" placeholder="Nova senha" required>
+      <input type="password" id="sConf" placeholder="Confirmar nova senha" required>
+      <small class="muted">Se o backend ainda não possui campo <b>senha</b> para Psicólogo, o valor será enviado via <code>PUT</code> e passará a valer quando existir.</small>
+    </div>
+    <div class="dlg-foot">
+      <button class="btn secondary" id="sCancel">Cancelar</button>
+      <button class="btn" id="sSave">Salvar</button>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const API='http://localhost:8080';
+
+    // --- sessão obrigatória do tipo Psicologo ---
+    const role = localStorage.getItem('role');
+    const email = (localStorage.getItem('email')||'').toLowerCase();
+    const userId = Number(localStorage.getItem('userId')||0);
+    if(role!=='Psicologo'){ location.href='index.html'; }
+    document.getElementById('sessEmail').textContent = email || '—';
+
+    // ui menor
+    const toast=(t,ok=true)=>{ const el=document.getElementById('toast'); el.textContent=t; el.style.display='block'; el.style.border='1px solid '+(ok?'#1e9e63':'#c0392b'); setTimeout(()=>el.style.display='none',2200); };
+    perfilBtn.onclick=()=>{ perfilDrop.style.display = perfilDrop.style.display==='block' ? 'none' : 'block'; };
+    document.addEventListener('click', (e)=>{ if(!e.target.closest('.menu')) perfilDrop.style.display='none'; });
+    logoutBtn.onclick=()=>{ localStorage.clear(); location.href='index.html'; };
+
+    // dados
+    let ME=null, consultas=[];
+
+    async function resolvePsicologo(){
+      const r=await fetch(API+'/psicologos'); const lista=await r.json();
+      ME = lista.find(p => (p.email||'').toLowerCase()===email);
+      if(!ME){ alert('Psicólogo não encontrado pelo e-mail da sessão.'); localStorage.clear(); location.href='index.html'; return; }
+    }
+
+    async function loadConsultas(){
+      const r=await fetch(API+'/consultas'); const all=await r.json();
+      consultas = all.filter(c => c.psicologo?.id===ME.id);
+      renderTable();
+    }
+
+    function toLocal(iso){ const d=new Date(iso); const pad=n=>String(n).padStart(2,'0'); return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+
+    function applyFilter(list){
+      const ini = fIni.value ? new Date(fIni.value) : null;
+      const fim = fFim.value ? new Date(fFim.value) : null;
+      return list.filter(c=>{
+        if(!c.dataHora) return true;
+        const d=new Date(c.dataHora);
+        if(ini && d<ini) return false;
+        if(fim){ const f=new Date(fim); f.setDate(f.getDate()+1); if(d>=f) return false; }
+        return true;
+      }).sort((a,b)=> new Date(a.dataHora)-new Date(b.dataHora));
+    }
+
+    function renderTable(){
+      const tb=document.getElementById('tbConsultas'); tb.innerHTML='';
+      const data=applyFilter(consultas);
+      data.forEach(c=>{
+        const tr=document.createElement('tr');
+        tr.innerHTML=`
+          <td>${c.dataHora? toLocal(c.dataHora) : '-'}</td>
+          <td>${c.paciente?.nome || ('ID '+(c.paciente?.id??'-'))}</td>
+          <td><span class="tag">${c.status||'PENDENTE'}</span></td>
+          <td>
+            <div>${(c.observacoes||'').replace(/\n/g,'<br>')}</div>
+            <button class="btn secondary" data-obs="${c.id}" style="margin-top:6px"><i class="fa-solid fa-pen"></i> Obs.</button>
+          </td>
+          <td>
+            <button class="btn" data-ok="${c.id}"><i class="fa-solid fa-check"></i> Confirmar</button>
+            <button class="btn secondary" data-rem="${c.id}"><i class="fa-solid fa-arrows-rotate"></i> Remarcar</button>
+            <button class="btn err" data-can="${c.id}"><i class="fa-solid fa-ban"></i> Cancelar</button>
+          </td>`;
+        tb.appendChild(tr);
+      });
+
+      tb.querySelectorAll('[data-obs]').forEach(b=> b.onclick=()=>{
+        const id=+b.dataset.obs; const c=consultas.find(x=>x.id===id);
+        obsId.value=c.id; obsTexto.value=c.observacoes||''; window.scrollTo({top:document.body.scrollHeight, behavior:'smooth'});
+      });
+      tb.querySelectorAll('[data-ok]').forEach(b=> b.onclick=()=> updateStatus(+b.dataset.ok,'CONFIRMADA'));
+      tb.querySelectorAll('[data-can]').forEach(b=> b.onclick=()=> updateStatus(+b.dataset.can,'CANCELADA'));
+      tb.querySelectorAll('[data-rem]').forEach(b=> b.onclick=()=>{
+        const id=+b.dataset.rem; const c=consultas.find(x=>x.id===id);
+        const base = c.dataHora ? c.dataHora.slice(0,16) : '';
+        const novo = prompt('Nova data/hora (AAAA-MM-DDTHH:MM):', base.replace('Z',''));
+        if(!novo) return; updateConsulta(id, { ...c, dataHora: new Date(novo).toISOString(), status:'REMARCADA' });
+      });
+    }
+
+    async function updateStatus(id, status){
+      const c=consultas.find(x=>x.id===id);
+      await updateConsulta(id, { ...c, status });
+    }
+    async function updateConsulta(id, payload){
+      const r=await fetch(`${API}/consultas/${id}`,{method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      if(r.ok){ toast('Consulta atualizada'); await loadConsultas(); } else toast('Falha ao atualizar', false);
+    }
+
+    obsSalvar.onclick=async ()=>{
+      const id=Number(obsId.value); if(!id){ toast('Selecione uma consulta', false); return; }
+      const c=consultas.find(x=>x.id===id); if(!c){ toast('Consulta não encontrada', false); return; }
+      const payload={...c, observacoes: obsTexto.value};
+      const r=await fetch(`${API}/consultas/${id}`,{method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      if(r.ok){ toast('Observações salvas'); obsTexto.value=''; obsId.value=''; await loadConsultas(); } else toast('Erro ao salvar', false);
+    };
+    obsLimpar.onclick=()=>{ obsTexto.value=''; obsId.value=''; };
+
+    btnFiltrar.onclick=()=>renderTable();
+    btnLimpar.onclick=()=>{ fIni.value=''; fFim.value=''; renderTable(); };
+
+    // alterar senha do próprio psicólogo
+    alterarSenhaBtn.onclick=()=>{ sAtual.value=''; sNova.value=''; sConf.value=''; dlgSenha.showModal(); };
+    sCancel.onclick=()=>dlgSenha.close();
+    sSave.onclick=async ()=>{
+      if(sNova.value.trim()==='' || sNova.value!==sConf.value){ toast('Nova senha inválida/sem confirmação', false); return; }
+      try{
+        if('senha' in ME && ME.senha){ if(sAtual.value!==ME.senha){ toast('Senha atual incorreta', false); return; } }
+        const payload={...ME, senha:sNova.value};
+        const up=await fetch(`${API}/psicologos/${ME.id}`,{method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+        if(up.ok){ toast('Senha atualizada!'); dlgSenha.close(); } else toast('Falha ao atualizar senha', false);
+      }catch{ toast('Erro de comunicação', false); }
+    };
+
+    (async function start(){ await resolvePsicologo(); if(ME) await loadConsultas(); })();
+  </script>
+</body>
+</html>

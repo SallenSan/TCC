@@ -24,7 +24,7 @@ public class Paciente {
 
     @OneToOne
     @JoinColumn(name = "usuario_id", unique = true)
-    private Usuario usuario;
+    private UsuarioAdmin usuario;
 
     @OneToMany(mappedBy = "paciente", cascade = CascadeType.ALL)
     private List<Consulta> consultas;
