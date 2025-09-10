@@ -141,60 +141,63 @@
     </div>
   </div>
 
-  <script>
-    const API = 'http://localhost:8080';
-    const toast = (t, ok = true) => { const el = document.getElementById('toast'); el.textContent = t; el.className = 'toast ' + (ok ? 'ok' : 'err'); };
+<script>
+  const API = 'http://localhost:8080';
+  const toast = (t, ok = true) => {
+    const el = document.getElementById('toast');
+    el.textContent = t;
+    el.className = 'toast ' + (ok ? 'ok' : 'err');
+  };
 
-    let selectedRole = null;
-    document.querySelectorAll('.role').forEach(el => {
-      el.addEventListener('click', () => {
-        document.querySelectorAll('.role').forEach(r => r.style.outline = 'none');
-        el.style.outline = '3px solid #e0c7e0';
-        selectedRole = el.dataset.role;
-        document.getElementById('entrarBtn').disabled = false;
-      });
+  let selectedRole = null;
+  document.querySelectorAll('.role').forEach(el => {
+    el.addEventListener('click', () => {
+      document.querySelectorAll('.role').forEach(r => r.style.outline = 'none');
+      el.style.outline = '3px solid #e0c7e0';
+      selectedRole = el.dataset.role;
+      document.getElementById('entrarBtn').disabled = false;
     });
+  });
 
-    document.getElementById('entrarBtn').addEventListener('click', async () => {
-      const email = (document.getElementById('email').value || '').trim().toLowerCase();
-      const senha = (document.getElementById('senha').value || ''); // ignorada para Admin (hash no backend)
-      if (!selectedRole) { toast('Escolha um perfil.', false); return; }
-      if (!email || !email.includes('@')) { toast('Informe um e-mail válido.', false); return; }
+  document.getElementById('entrarBtn').addEventListener('click', async () => {
+    const email = (document.getElementById('email').value || '').trim().toLowerCase();
+    const senha = (document.getElementById('senha').value || '');
+    if (!selectedRole) { toast('Escolha um perfil.', false); return; }
+    if (!email || !email.includes('@')) { toast('Informe um e-mail válido.', false); return; }
 
-      try {
-        if (selectedRole === 'Paciente') {
-          const r = await fetch(API + '/pacientes'); const arr = await r.json();
-          const u = arr.find(p => (p.email || '').toLowerCase() === email);
-          if (!u) { toast('Paciente não encontrado.', false); return; }
-          // Se tiver senha em texto em Paciente, valida; senão, deixa entrar
-          if ('senha' in u && u.senha) { if (u.senha !== senha) { toast('Senha incorreta.', false); return; } }
-          localStorage.setItem('role', 'Paciente'); localStorage.setItem('email', u.email); localStorage.setItem('userId', u.id);
-          toast('Entrando...'); location.href = 'paciente-portal.html';
-        }
-
-        if (selectedRole === 'Psicologo') {
-          const r = await fetch(API + '/psicologos'); const arr = await r.json();
-          const u = arr.find(p => (p.email || '').toLowerCase() === email);
-          if (!u) { toast('Psicólogo não encontrado.', false); return; }
-          if ('senha' in u && u.senha) { if (u.senha !== senha) { toast('Senha incorreta.', false); return; } }
-          localStorage.setItem('role', 'Psicologo'); localStorage.setItem('email', u.email); localStorage.setItem('userId', u.id);
-          toast('Entrando...'); location.href = 'psicologo-portal.html';
-        }
-
-        if (selectedRole === 'Admin') {
-          // Admin agora vem de /usuario-admin
-          const r = await fetch(API + '/usuario-admin'); const arr = await r.json();
-          const u = arr.find(a => (a.email || '').toLowerCase() === email);
-          if (!u) { toast('Admin não encontrado.', false); return; }
-          // NÃO validamos senha aqui porque no banco está hash (bcrypt). Se quiser validar, crie /auth/login no backend.
-          localStorage.setItem('role', 'Admin'); localStorage.setItem('email', u.email); localStorage.setItem('userId', u.id);
-          toast('Entrando...'); location.href = 'admin.html';
-        }
-      } catch (e) {
-        toast('Falha ao conectar no backend.', false);
+    try {
+      if (selectedRole === 'Paciente') {
+        const r = await fetch(API + '/pacientes'); const arr = await r.json();
+        const u = arr.find(p => (p.email || '').toLowerCase() === email);
+        if (!u) { toast('Paciente não encontrado.', false); return; }
+        if ('senha' in u && u.senha && u.senha !== senha) { toast('Senha incorreta.', false); return; }
+        localStorage.setItem('role','Paciente'); localStorage.setItem('email',u.email); localStorage.setItem('userId',u.id);
+        toast('Entrando...'); location.href='paciente-portal.html';
       }
-    });
-  </script>
+
+      if (selectedRole === 'Psicologo') {
+        const r = await fetch(API + '/psicologos'); const arr = await r.json();
+        const u = arr.find(p => (p.email || '').toLowerCase() === email);
+        if (!u) { toast('Psicólogo não encontrado.', false); return; }
+        if ('senha' in u && u.senha && u.senha !== senha) { toast('Senha incorreta.', false); return; }
+        localStorage.setItem('role','Psicologo'); localStorage.setItem('email',u.email); localStorage.setItem('userId',u.id);
+        toast('Entrando...'); location.href='psicologo-portal.html';
+      }
+
+      if (selectedRole === 'Admin') {
+        const r = await fetch(API + '/usuario-admin'); const arr = await r.json();
+        const u = arr.find(a => (a.email || '').toLowerCase() === email);
+        if (!u) { toast('Admin não encontrado.', false); return; }
+        // senhaHash não é validável direto (bcrypt). Se precisar, crie /auth/login no backend.
+        localStorage.setItem('role','Admin'); localStorage.setItem('email',u.email); localStorage.setItem('userId',u.id);
+        toast('Entrando...'); location.href='admin.html';
+      }
+    } catch {
+      toast('Falha ao conectar no backend.', false);
+    }
+  });
+</script>
+
 </body>
 
 </html>

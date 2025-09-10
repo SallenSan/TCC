@@ -5,39 +5,54 @@
   <title>Admin • Sistema de Consultas</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    body{font-family:Arial, Helvetica, sans-serif; background:#f9f6fc; margin:0; padding:20px; color:#2d2a32}
-    h1{text-align:center; color:#5e4b8a}
-    nav{text-align:center; margin-bottom:20px}
-    nav button{margin:0 6px; padding:10px 14px; background:#c8a2c8; color:#fff; border:none; border-radius:8px; cursor:pointer}
-    nav button:hover{background:#b089b0}
-    .container{max-width:1200px; margin:auto; background:#fff; padding:20px; border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,.08)}
+    :root{
+      --bg:#f9f6fc; --card:#fff; --text:#2d2a32; --muted:#6b6475;
+      --pri:#c8a2c8; --pri-h:#b089b0; --ok:#1e9e63; --err:#c0392b;
+      --bd:#e8e1f1; --shadow:0 8px 24px rgba(0,0,0,.08);
+    }
+    *{box-sizing:border-box}
+    body{font-family:Arial, Helvetica, sans-serif; background:var(--bg); margin:0; padding:20px; color:var(--text)}
+    h1{margin:0 0 12px; text-align:center; color:#5e4b8a}
+    nav{text-align:center; margin-bottom:18px}
+    nav button{margin:0 6px; padding:10px 14px; background:var(--pri); color:#fff; border:none; border-radius:10px; cursor:pointer}
+    nav button:hover{background:var(--pri-h)}
+    .container{max-width:1200px; margin:auto; background:var(--card); padding:20px; border-radius:14px; box-shadow:var(--shadow)}
     .row{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px}
-    input, select{padding:10px; border:1px solid #d7cfe4; border-radius:8px}
-    .btn{padding:10px 14px; background:#c8a2c8; color:#fff; border:none; border-radius:8px; font-weight:700; cursor:pointer}
+    input, select{padding:10px; border:1px solid #d7cfe4; border-radius:8px; background:#fff; min-width:160px}
+    .btn{padding:10px 14px; background:var(--pri); color:#fff; border:none; border-radius:8px; font-weight:700; cursor:pointer}
+    .btn.red{background:var(--err)}
+    .btn:hover{filter:brightness(.95)}
+    .muted{color:var(--muted)}
     table{width:100%; border-collapse:collapse}
     th,td{border-bottom:1px solid #eee; padding:10px; text-align:left; vertical-align:top}
-    .ok{color:#1e9e63} .err{color:#c0392b}
-    .card{background:#fff; border:1px solid #eee; border-radius:12px; padding:14px; margin:14px 0}
+    .ok{color:var(--ok)} .err{color:var(--err)}
+    .card{background:#fff; border:1px solid var(--bd); border-radius:12px; padding:14px; margin:14px 0}
     .tools{display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:space-between}
     .tag{padding:2px 8px; border-radius:999px; background:#efe7f6; font-size:12px}
+    .spacer{flex:1}
+    .pill{padding:6px 10px; border:1px solid var(--bd); background:#fbf9ff; border-radius:999px; font-size:12px}
+    .grid{display:grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap:8px}
   </style>
 </head>
 <body>
   <h1>Admin • Sistema de Consultas</h1>
   <nav>
-    <button onclick="location.href='index.html'">Sair</button>
+    <span class="pill">Sessão: <b id="emailSpan">—</b></span>
+    <button id="logoutBtn">Sair</button>
   </nav>
 
   <div class="container">
-    <div id="msg"></div>
-    <div class="row"><b>E-mail da sessão:</b>&nbsp;<span id="emailSpan"></span></div>
+    <div id="msg" class="muted"></div>
 
+    <!-- Pacientes -->
     <div class="card">
       <div class="tools">
         <h2>Pacientes</h2>
-        <button class="btn" id="expPac">Exportar CSV</button>
+        <div>
+          <button class="btn" id="expPac">Exportar CSV</button>
+        </div>
       </div>
-      <form id="pacForm" class="row">
+      <form id="pacForm" class="grid" autocomplete="off">
         <input id="pacNome" placeholder="Nome" required>
         <input id="pacEmail" placeholder="E-mail" type="email" required>
         <button class="btn">Salvar</button>
@@ -48,12 +63,15 @@
       </table>
     </div>
 
+    <!-- Psicólogos -->
     <div class="card">
       <div class="tools">
         <h2>Psicólogos</h2>
-        <button class="btn" id="expPsi">Exportar CSV</button>
+        <div>
+          <button class="btn" id="expPsi">Exportar CSV</button>
+        </div>
       </div>
-      <form id="psiForm" class="row">
+      <form id="psiForm" class="grid" autocomplete="off">
         <input id="psiNome" placeholder="Nome" required>
         <input id="psiEmail" placeholder="E-mail" type="email" required>
         <input id="psiTelefone" placeholder="Telefone">
@@ -62,17 +80,20 @@
         <button class="btn">Salvar</button>
       </form>
       <table>
-        <thead><tr><th>ID</th><th>Nome</th><th>E-mail</th><th>CRP</th><th>Tel</th><th>Esp.</th><th>Ações</th></tr></thead>
+        <thead><tr><th>ID</th><th>Nome</th><th>E-mail</th><th>CRP</th><th>Telefone</th><th>Especialidade</th><th>Ações</th></tr></thead>
         <tbody id="tbPsi"></tbody>
       </table>
     </div>
 
+    <!-- Consultas -->
     <div class="card">
       <div class="tools">
         <h2>Consultas</h2>
-        <button class="btn" id="expCon">Exportar CSV</button>
+        <div>
+          <button class="btn" id="expCon">Exportar CSV</button>
+        </div>
       </div>
-      <form id="conForm" class="row">
+      <form id="conForm" class="grid" autocomplete="off">
         <select id="conPac" required><option value="">Paciente</option></select>
         <select id="conPsi" required><option value="">Psicólogo</option></select>
         <input type="datetime-local" id="conData" required>
@@ -93,143 +114,186 @@
   </div>
 
   <script>
-    const API='http://localhost:8080';
-    const email=(localStorage.getItem('email')||'').trim().toLowerCase();
-    const role=(localStorage.getItem('role')||'');
-    document.getElementById('emailSpan').textContent = email || '(não definido)';
-    const msg=(t,ok=true)=>{ const el=document.getElementById('msg'); el.innerHTML=`<b class="${ok?'ok':'err'}">${t}</b>`; setTimeout(()=>el.textContent='',2200); };
-
-    // Gate de acesso: precisa estar com role 'Admin' E o e-mail existir no /usuario-admin
-    (async function gate(){
-      if(role!=='Admin' || !email){ alert('Acesso restrito ao Admin.'); location.href='index.html'; return; }
-      try{
-        const r = await fetch(API+'/usuario-admin'); if(!r.ok){ throw new Error(); }
-        const arr = await r.json();
-        const u = arr.find(a=> (a.email||'').toLowerCase()===email);
-        if(!u){ alert('Admin não encontrado no sistema.'); location.href='index.html'; return; }
-      }catch(e){
-        alert('Não foi possível validar o Admin.'); location.href='index.html';
-      }
-    })();
-
-    // utils
+    // ====== Config / Helpers ======
+    const API = 'http://localhost:8080';
+    const email = (localStorage.getItem('email')||'').trim().toLowerCase();
+    const role  = (localStorage.getItem('role')||'').trim();
+    const $ = sel => document.querySelector(sel);
+    const $id = id => document.getElementById(id);
+    const msg = (t, ok=true) => { const el=$id('msg'); el.innerHTML = t ? `<b class="${ok?'ok':'err'}">${t}</b>` : ''; if(t) setTimeout(()=>{el.innerHTML='';}, 2400); };
     const csv = rows => rows.map(r=>r.map(v=>`"${String(v??'').replaceAll('"','""')}"`).join(',')).join('\n');
     const download=(filename,text)=>{ const blob=new Blob([text],{type:'text/csv'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; a.click(); URL.revokeObjectURL(a.href); };
 
-    // estado
+    // ====== Gate de acesso: precisa role=Admin e e-mail existir em /usuario-admin ======
+    $id('emailSpan').textContent = email || '—';
+    $id('logoutBtn').onclick = () => { localStorage.clear(); location.href='index.html'; };
+
+    (async function gate(){
+      if(role!=='Admin' || !email){ alert('Acesso restrito ao Admin.'); location.href='index.html'; return; }
+      try{
+        const r = await fetch(API+'/usuario-admin');
+        if(!r.ok) throw new Error('HTTP '+r.status);
+        const arr = await r.json();
+        const u = arr.find(a => (a.email||'').toLowerCase()===email);
+        if(!u){ alert('Admin não cadastrado em /usuario-admin.'); location.href='index.html'; return; }
+      }catch(e){
+        alert('Não foi possível validar o Admin no backend.'); location.href='index.html';
+      }
+    })();
+
+    // ====== Estado ======
     let pacientes=[], psicologos=[], consultas=[];
+
     async function loadAll(){
-      const [rp, rpsi, rc] = await Promise.all([
-        fetch(API+'/pacientes'),
-        fetch(API+'/psicologos'),
-        fetch(API+'/consultas')
-      ]);
-      pacientes=await rp.json(); psicologos=await rpsi.json(); consultas=await rc.json();
-      fillPac(); fillPsi(); fillCon(); fillSelects();
+      try{
+        const [rp, rpsi, rc] = await Promise.all([
+          fetch(API+'/pacientes'),
+          fetch(API+'/psicologos'),
+          fetch(API+'/consultas')
+        ]);
+        if(!rp.ok||!rpsi.ok||!rc.ok) throw new Error('Falha ao buscar dados.');
+        pacientes = await rp.json();
+        psicologos = await rpsi.json();
+        consultas  = await rc.json();
+        fillPac(); fillPsi(); fillCon(); fillSelects();
+      }catch(e){ msg('Erro ao carregar dados.', false); }
     }
 
-    // pacientes
+    // ====== Pacientes ======
     function fillPac(){
-      const tb=document.getElementById('tbPac'); tb.innerHTML='';
+      const tb = $id('tbPac'); tb.innerHTML='';
       pacientes.forEach(p=>{
         const tr=document.createElement('tr');
-        tr.innerHTML=`<td>${p.id}</td><td>${p.nome}</td><td>${p.email||''}</td>
-        <td>
-          <button class="btn" data-e="${p.id}">Editar</button>
-          <button class="btn" data-d="${p.id}" style="background:#c0392b">Excluir</button>
-        </td>`;
+        tr.innerHTML = `
+          <td>${p.id}</td>
+          <td>${p.nome||''}</td>
+          <td>${p.email||''}</td>
+          <td>
+            <button class="btn" data-e="${p.id}">Editar</button>
+            <button class="btn red" data-d="${p.id}">Excluir</button>
+          </td>`;
         tb.appendChild(tr);
       });
-      tb.querySelectorAll('[data-e]').forEach(b=> b.onclick=()=>{
+
+      tb.querySelectorAll('[data-e]').forEach(b=> b.onclick = ()=>{
         const id=+b.dataset.e; const p=pacientes.find(x=>x.id===id);
-        const nome=prompt('Nome:', p.nome); if(nome===null) return;
+        const nome=prompt('Nome:', p.nome||''); if(nome===null) return;
         const email=prompt('E-mail:', p.email||''); if(email===null) return;
-        fetch(`${API}/pacientes/${id}`,{method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({...p, nome, email})})
-          .then(r=>r.ok?(msg('Paciente atualizado'), loadAll()):msg('Falha ao atualizar', false));
+        fetch(`${API}/pacientes/${id}`,{
+          method:'PUT', headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({...p, nome, email})
+        }).then(r=> r.ok ? (msg('Paciente atualizado'), loadAll()) : msg('Falha ao atualizar', false));
       });
-      tb.querySelectorAll('[data-d]').forEach(b=> b.onclick=()=>{
+
+      tb.querySelectorAll('[data-d]').forEach(b=> b.onclick = ()=>{
         const id=+b.dataset.d; if(!confirm('Excluir paciente?')) return;
-        fetch(`${API}/pacientes/${id}`,{method:'DELETE'}).then(r=>r.ok?(msg('Excluído'), loadAll()):msg('Falha ao excluir', false));
+        fetch(`${API}/pacientes/${id}`,{method:'DELETE'})
+          .then(r=> r.ok ? (msg('Paciente excluído'), loadAll()) : msg('Falha ao excluir', false));
       });
     }
-    document.getElementById('pacForm').addEventListener('submit', e=>{
-      e.preventDefault();
-      const nome=document.getElementById('pacNome').value.trim();
-      const email=document.getElementById('pacEmail').value.trim();
-      if(!nome||!email.includes('@')){ msg('Dados inválidos', false); return; }
-      fetch(API+'/pacientes',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({nome,email})})
-        .then(r=>r.ok?(msg('Cadastrado'), e.target.reset(), loadAll()):msg('Erro ao cadastrar', false));
-    });
-    document.getElementById('expPac').onclick=()=>download('pacientes.csv', csv([['ID','Nome','Email'], ...pacientes.map(p=>[p.id,p.nome,p.email||''])]));
 
-    // psicologos
+    $id('pacForm').addEventListener('submit', e=>{
+      e.preventDefault();
+      const nome=$id('pacNome').value.trim();
+      const email=$id('pacEmail').value.trim();
+      if(!nome || !email.includes('@')){ msg('Informe nome e e-mail válidos.', false); return; }
+      fetch(API+'/pacientes',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({nome,email})})
+        .then(r=> r.ok ? (msg('Paciente cadastrado'), e.target.reset(), loadAll()) : msg('Erro ao cadastrar paciente', false));
+    });
+
+    $id('expPac').onclick=()=>download('pacientes.csv',
+      csv([['ID','Nome','Email'], ...pacientes.map(p=>[p.id,p.nome||'',p.email||''])])
+    );
+
+    // ====== Psicólogos ======
     function fillPsi(){
-      const tb=document.getElementById('tbPsi'); tb.innerHTML='';
+      const tb = $id('tbPsi'); tb.innerHTML='';
       psicologos.forEach(p=>{
         const tr=document.createElement('tr');
-        tr.innerHTML=`<td>${p.id}</td><td>${p.nome}</td><td>${p.email||''}</td><td>${p.crp||''}</td><td>${p.telefone||''}</td><td>${p.especialidade||''}</td>
-        <td>
-          <button class="btn" data-e="${p.id}">Editar</button>
-          <button class="btn" data-d="${p.id}" style="background:#c0392b">Excluir</button>
-        </td>`;
+        tr.innerHTML = `
+          <td>${p.id}</td>
+          <td>${p.nome||''}</td>
+          <td>${p.email||''}</td>
+          <td>${p.crp||''}</td>
+          <td>${p.telefone||''}</td>
+          <td>${p.especialidade||''}</td>
+          <td>
+            <button class="btn" data-e="${p.id}">Editar</button>
+            <button class="btn red" data-d="${p.id}">Excluir</button>
+          </td>`;
         tb.appendChild(tr);
       });
-      tb.querySelectorAll('[data-e]').forEach(b=> b.onclick=()=>{
+
+      tb.querySelectorAll('[data-e]').forEach(b=> b.onclick = ()=>{
         const id=+b.dataset.e; const p=psicologos.find(x=>x.id===id);
-        const nome=prompt('Nome:', p.nome); if(nome===null) return;
+        const nome=prompt('Nome:', p.nome||''); if(nome===null) return;
         const email=prompt('E-mail:', p.email||''); if(email===null) return;
         const telefone=prompt('Telefone:', p.telefone||''); if(telefone===null) return;
         const crp=prompt('CRP:', p.crp||''); if(crp===null) return;
         const especialidade=prompt('Especialidade:', p.especialidade||''); if(especialidade===null) return;
-        fetch(`${API}/psicologos/${id}`,{method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({...p, nome, email, telefone, crp, especialidade})})
-          .then(r=>r.ok?(msg('Psicólogo atualizado'), loadAll()):msg('Falha ao atualizar', false));
+        fetch(`${API}/psicologos/${id}`,{
+          method:'PUT', headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({...p, nome, email, telefone, crp, especialidade})
+        }).then(r=> r.ok ? (msg('Psicólogo atualizado'), loadAll()) : msg('Falha ao atualizar', false));
       });
-      tb.querySelectorAll('[data-d]').forEach(b=> b.onclick=()=>{
-        const id=+b.dataset.d; if(!confirm('Excluir psicólogo?')) return;
-        fetch(`${API}/psicologos/${id}`,{method:'DELETE'}).then(r=>r.ok?(msg('Excluído'), loadAll()):msg('Falha ao excluir', false));
-      });
-    }
-    document.getElementById('psiForm').addEventListener('submit', e=>{
-      e.preventDefault();
-      const payload={
-        nome:document.getElementById('psiNome').value.trim(),
-        email:document.getElementById('psiEmail').value.trim(),
-        telefone:document.getElementById('psiTelefone').value.trim(),
-        crp:document.getElementById('psiCrp').value.trim(),
-        especialidade:document.getElementById('psiEsp').value.trim()
-      };
-      if(!payload.nome || !payload.email.includes('@') || !payload.especialidade){ msg('Preencha nome, e-mail e especialidade', false); return; }
-      fetch(API+'/psicologos',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)})
-        .then(r=>r.ok?(msg('Cadastrado'), e.target.reset(), loadAll()):msg('Erro ao cadastrar', false));
-    });
-    document.getElementById('expPsi').onclick=()=>download('psicologos.csv', csv([['ID','Nome','Email','CRP','Telefone','Especialidade'], ...psicologos.map(p=>[p.id,p.nome,p.email||'',p.crp||'',p.telefone||'',p.especialidade||''])]));
 
-    // consultas
-    function fillSelects(){
-      const conPac=document.getElementById('conPac');
-      const conPsi=document.getElementById('conPsi');
-      conPac.innerHTML='<option value="">Paciente</option>'+pacientes.map(p=>`<option value="${p.id}">${p.nome} (${p.email})</option>`).join('');
-      conPsi.innerHTML='<option value="">Psicólogo</option>'+psicologos.map(p=>`<option value="${p.id}">${p.nome} • ${p.email||''}</option>`).join('');
+      tb.querySelectorAll('[data-d]').forEach(b=> b.onclick = ()=>{
+        const id=+b.dataset.d; if(!confirm('Excluir psicólogo?')) return;
+        fetch(`${API}/psicologos/${id}`,{method:'DELETE'})
+          .then(r=> r.ok ? (msg('Psicólogo excluído'), loadAll()) : msg('Falha ao excluir', false));
+      });
     }
+
+    $id('psiForm').addEventListener('submit', e=>{
+      e.preventDefault();
+      const payload = {
+        nome:$id('psiNome').value.trim(),
+        email:$id('psiEmail').value.trim(),
+        telefone:$id('psiTelefone').value.trim(),
+        crp:$id('psiCrp').value.trim(),
+        especialidade:$id('psiEsp').value.trim()
+      };
+      if(!payload.nome || !payload.email.includes('@') || !payload.especialidade){
+        msg('Preencha nome, e-mail e especialidade.', false); return;
+      }
+      fetch(API+'/psicologos',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)})
+        .then(r=> r.ok ? (msg('Psicólogo cadastrado'), e.target.reset(), loadAll()) : msg('Erro ao cadastrar psicólogo', false));
+    });
+
+    $id('expPsi').onclick=()=>download('psicologos.csv',
+      csv([['ID','Nome','Email','CRP','Telefone','Especialidade'],
+           ...psicologos.map(p=>[p.id,p.nome||'',p.email||'',p.crp||'',p.telefone||'',p.especialidade||''])])
+    );
+
+    // ====== Consultas ======
+    function fillSelects(){
+      const conPac=$id('conPac'), conPsi=$id('conPsi');
+      conPac.innerHTML = '<option value="">Paciente</option>' +
+        pacientes.map(p=>`<option value="${p.id}">${p.nome} (${p.email||'—'})</option>`).join('');
+      conPsi.innerHTML = '<option value="">Psicólogo</option>' +
+        psicologos.map(p=>`<option value="${p.id}">${p.nome} • ${p.email||'—'}</option>`).join('');
+    }
+
     function fillCon(){
-      const tb=document.getElementById('tbCon'); tb.innerHTML='';
-      consultas.sort((a,b)=> new Date(a.dataHora)-new Date(b.dataHora))
+      const tb = $id('tbCon'); tb.innerHTML='';
+      (consultas||[]).slice().sort((a,b)=> new Date(a.dataHora)-new Date(b.dataHora))
       .forEach(c=>{
         const tr=document.createElement('tr');
-        tr.innerHTML=`<td>${c.id}</td>
-        <td>${c.dataHora ? new Date(c.dataHora).toLocaleString('pt-BR') : '-'}</td>
-        <td>${c.paciente?.nome||('ID '+c.paciente?.id)}</td>
-        <td>${c.psicologo?.nome||('ID '+c.psicologo?.id)}</td>
-        <td><span class="tag">${c.status}</span></td>
-        <td>${c.observacoes||''}</td>
-        <td>
-          <button class="btn" data-e="${c.id}">Editar</button>
-          <button class="btn" data-d="${c.id}" style="background:#c0392b">Excluir</button>
-        </td>`;
+        tr.innerHTML = `
+          <td>${c.id}</td>
+          <td>${c.dataHora ? new Date(c.dataHora).toLocaleString('pt-BR') : '-'}</td>
+          <td>${c.paciente?.nome ?? ('ID '+(c.paciente?.id ?? ''))}</td>
+          <td>${c.psicologo?.nome ?? ('ID '+(c.psicologo?.id ?? ''))}</td>
+          <td><span class="tag">${c.status||'PENDENTE'}</span></td>
+          <td>${c.observacoes||''}</td>
+          <td>
+            <button class="btn" data-e="${c.id}">Editar</button>
+            <button class="btn red" data-d="${c.id}">Excluir</button>
+          </td>`;
         tb.appendChild(tr);
       });
 
-      tb.querySelectorAll('[data-e]').forEach(b=> b.onclick=()=>{
+      tb.querySelectorAll('[data-e]').forEach(b=> b.onclick = ()=>{
         const id=+b.dataset.e; const c=consultas.find(x=>x.id===id);
         const data = prompt('Data/hora (AAAA-MM-DDTHH:MM):', c.dataHora? c.dataHora.slice(0,16).replace('Z',''):''); if(data===null) return;
         const status = prompt('Status (PENDENTE/CONFIRMADA/CANCELADA/REMARCADA):', c.status||'PENDENTE'); if(status===null) return;
@@ -237,27 +301,42 @@
         fetch(`${API}/consultas/${id}`,{
           method:'PUT', headers:{'Content-Type':'application/json'},
           body:JSON.stringify({...c, dataHora:data? new Date(data).toISOString():c.dataHora, status, observacoes:obs})
-        }).then(r=>r.ok?(msg('Consulta atualizada'), loadAll()):msg('Falha ao atualizar', false));
+        }).then(r=> r.ok ? (msg('Consulta atualizada'), loadAll()) : msg('Falha ao atualizar', false));
       });
-      tb.querySelectorAll('[data-d]').forEach(b=> b.onclick=()=>{
+
+      tb.querySelectorAll('[data-d]').forEach(b=> b.onclick = ()=>{
         const id=+b.dataset.d; if(!confirm('Excluir consulta?')) return;
-        fetch(`${API}/consultas/${id}`,{method:'DELETE'}).then(r=>r.ok?(msg('Excluída'), loadAll()):msg('Falha ao excluir', false));
+        fetch(`${API}/consultas/${id}`,{method:'DELETE'})
+          .then(r=> r.ok ? (msg('Consulta excluída'), loadAll()) : msg('Falha ao excluir', false));
       });
     }
-    document.getElementById('conForm').addEventListener('submit', e=>{
-      e.preventDefault();
-      const pid=+document.getElementById('conPac').value;
-      const psid=+document.getElementById('conPsi').value;
-      const data=document.getElementById('conData').value;
-      const status=document.getElementById('conStatus').value;
-      const obs=document.getElementById('conObs').value.trim();
-      if(!pid||!psid||!data){ msg('Preencha paciente, psicólogo e data/hora', false); return; }
-      const payload={paciente:{id:pid}, psicologo:{id:psid}, dataHora:new Date(data).toISOString(), status, observacoes: obs||null};
-      fetch(API+'/consultas',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)})
-        .then(r=>r.ok?(msg('Consulta agendada'), e.target.reset(), loadAll()):msg('Erro ao agendar', false));
-    });
-    document.getElementById('expCon').onclick=()=>download('consultas.csv', csv([['ID','DataHora','Paciente','Psicologo','Status','Obs'], ...consultas.map(c=>[c.id,c.dataHora,c.paciente?.nome||c.paciente?.id||'',c.psicologo?.nome||c.psicologo?.id||'',c.status,c.observacoes||''])]));
 
+    $id('conForm').addEventListener('submit', e=>{
+      e.preventDefault();
+      const pid=+$id('conPac').value;
+      const psid=+$id('conPsi').value;
+      const data=$id('conData').value;
+      const status=$id('conStatus').value;
+      const obs=$id('conObs').value.trim();
+      if(!pid||!psid||!data){ msg('Preencha paciente, psicólogo e data/hora.', false); return; }
+      const payload = { paciente:{id:pid}, psicologo:{id:psid}, dataHora:new Date(data).toISOString(), status, observacoes: obs||null };
+      fetch(API+'/consultas',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)})
+        .then(r=> r.ok ? (msg('Consulta agendada'), e.target.reset(), loadAll()) : msg('Erro ao agendar consulta', false));
+    });
+
+    $id('expCon').onclick=()=>download('consultas.csv',
+      csv([['ID','DataHora','Paciente','Psicologo','Status','Obs'],
+           ...consultas.map(c=>[
+             c.id,
+             c.dataHora,
+             c.paciente?.nome || c.paciente?.id || '',
+             c.psicologo?.nome || c.psicologo?.id || '',
+             c.status||'',
+             c.observacoes||''
+           ])])
+    );
+
+    // ====== Boot ======
     (async function start(){ await loadAll(); })();
   </script>
 </body>

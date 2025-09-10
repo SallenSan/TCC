@@ -21,24 +21,19 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(withDefaults())
                 .authorizeHttpRequests(auth -> auth
-                        // públicos (ajuste conforme sua necessidade)
                         .requestMatchers("/pacientes/**").permitAll()
                         .requestMatchers("/psicologos/**").permitAll()
                         .requestMatchers("/consultas/**").permitAll()
                         .requestMatchers("/teste-email").permitAll()
-                        .requestMatchers("/usuario-admin").permitAll()
-                        // troca de senha requer usuário autenticado
+                        .requestMatchers("/usuario-admin/**").permitAll() // <-- corrigido para liberar tudo
                         .requestMatchers("/auth/change-password").authenticated()
-                        // o restante, por ora, liberado
                         .anyRequest().permitAll()
                 )
-                // HTTP Basic para autenticação da troca de senha
                 .httpBasic(withDefaults());
 
         return http.build();
     }
 
-    // CORS — importante permitir Authorization
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
