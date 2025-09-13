@@ -8,7 +8,7 @@ import java.time.OffsetDateTime;
  * Para reagendar/alterar observações e (opcional) status.
  */
 public record ConsultaUpdateDTO(
-        OffsetDateTime dataHora,
+        String dataHora,
         String observacoes,
         String status // "AGENDADA", "CANCELADA", "CONCLUIDA" (opcional)
 ) {}

@@ -1,13 +1,9 @@
 package com.tcc.consultas.service;
 
+import com.tcc.consultas.controller.ConsultaController; // parse helper
+import com.tcc.consultas.dto.ConsultaUpdateDTO;
 import com.tcc.consultas.model.Consulta;
-import com.tcc.consultas.model.Paciente;
-import com.tcc.consultas.model.Psicologo;
 import com.tcc.consultas.repository.ConsultaRepository;
-import com.tcc.consultas.repository.PacienteRepository;
-import com.tcc.consultas.repository.PsicologoRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,159 +12,83 @@ import java.util.List;
 @Service
 public class ConsultaService {
 
-    private static final Logger log = LoggerFactory.getLogger(ConsultaService.class);
-
     private final ConsultaRepository consultaRepository;
-    private final PacienteRepository pacienteRepository;
-    private final PsicologoRepository psicologoRepository;
-    private final NotificacaoEmailService notificacaoEmailService;
+    private final PacienteService pacienteService;
+    private final PsicologoService psicologoService;
 
     public ConsultaService(ConsultaRepository consultaRepository,
-                           PacienteRepository pacienteRepository,
-                           PsicologoRepository psicologoRepository,
-                           NotificacaoEmailService notificacaoEmailService) {
+                           PacienteService pacienteService,
+                           PsicologoService psicologoService) {
         this.consultaRepository = consultaRepository;
-        this.pacienteRepository = pacienteRepository;
-        this.psicologoRepository = psicologoRepository;
-        this.notificacaoEmailService = notificacaoEmailService;
+        this.pacienteService = pacienteService;
+        this.psicologoService = psicologoService;
     }
 
-    /**
-     * Cria/salva uma nova consulta garantindo que Paciente e Psicólogo
-     * estejam recarregados do banco (com usuario/email populados).
-     */
     @Transactional
-    public Consulta salvar(Consulta consulta) {
-        validarRequisitosBasicos(consulta);
+    public Consulta salvar(Consulta c) {
+        // Garantir que Paciente/Psicólogo existem (evita detached/transient)
+        c.setPaciente(pacienteService.buscarPorId(c.getPaciente().getId()));
+        c.setPsicologo(psicologoService.buscarPorId(c.getPsicologo().getId()));
 
-        // Recarrega entidades do banco para evitar nulls/lazy não inicializados
-        Paciente paciente = pacienteRepository.findById(consulta.getPaciente().getId())
-                .orElseThrow(() -> new IllegalArgumentException("Paciente não encontrado."));
-        Psicologo psicologo = psicologoRepository.findById(consulta.getPsicologo().getId())
-                .orElseThrow(() -> new IllegalArgumentException("Psicólogo não encontrado."));
-
-        consulta.setPaciente(paciente);
-        consulta.setPsicologo(psicologo);
-
-        Consulta salva = consultaRepository.save(consulta);
-
-        try {
-            // Notifica agendamento (falha de e-mail não derruba a transação)
-            notificacaoEmailService.enviarAgendamento(salva);
-        } catch (RuntimeException ex) {
-            log.error("Falha ao enviar notificação de agendamento: {}", ex.getMessage(), ex);
+        // Se quiser forçar default de status quando vier null do controller:
+        if (c.getStatus() == null) {
+            c.setStatus(Consulta.StatusConsulta.AGENDADA);
         }
 
-        return salva;
+        return consultaRepository.save(c);
     }
 
-    /**
-     * Lista todas as consultas (usado pelo Controller).
-     */
     @Transactional(readOnly = true)
     public List<Consulta> listarTodas() {
         return consultaRepository.findAll();
     }
 
-    /**
-     * Busca consulta por ID (usado pelo Controller).
-     */
     @Transactional(readOnly = true)
     public Consulta buscarPorId(Long id) {
-        if (id == null) {
-            throw new IllegalArgumentException("Id da consulta é obrigatório.");
-        }
         return consultaRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Consulta não encontrada."));
+                .orElseThrow(() -> new IllegalArgumentException("Consulta não encontrada id=" + id));
     }
 
-    /**
-     * Atualiza consulta existente (usado pelo Controller).
-     * - Recarrega Paciente/Psicólogo do banco se IDs vierem no payload.
-     * - Mantém o comportamento de notificar sem derrubar transação se e-mail falhar.
-     */
     @Transactional
-    public Consulta atualizar(Long id, Consulta atualizacao) {
-        if (id == null) {
-            throw new IllegalArgumentException("Id da consulta é obrigatório.");
-        }
-        if (atualizacao == null) {
-            throw new IllegalArgumentException("Payload da consulta é obrigatório.");
+    public Consulta atualizar(Long id, ConsultaUpdateDTO dto) {
+        Consulta c = buscarPorId(id);
+
+        // dataHora vem como String (com ou sem offset). Convertemos para LocalDateTime.
+        if (dto.dataHora() != null && !dto.dataHora().isBlank()) {
+            c.setDataHora(
+                    ConsultaController.parseToOffsetDateTime(dto.dataHora())
+                            .toLocalDateTime()
+            );
         }
 
-        Consulta existente = consultaRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Consulta não encontrada."));
+        // status: aceitar nomes vindos do front (ex.: PENDENTE → AGENDADA)
+        if (dto.status() != null && !dto.status().isBlank()) {
+            String raw = dto.status().trim().toUpperCase();
 
-        // Aplicar campos simples (se vierem no payload)
-        if (atualizacao.getDataHora() != null) {
-            existente.setDataHora(atualizacao.getDataHora());
-        }
-        if (atualizacao.getStatus() != null) {
-            existente.setStatus(atualizacao.getStatus());
-        }
-        if (atualizacao.getObservacoes() != null) { // caso exista esse campo
-            existente.setObservacoes(atualizacao.getObservacoes());
-        }
-
-        // Troca de Paciente (se veio id)
-        if (atualizacao.getPaciente() != null && atualizacao.getPaciente().getId() != null) {
-            Paciente paciente = pacienteRepository.findById(atualizacao.getPaciente().getId())
-                    .orElseThrow(() -> new IllegalArgumentException("Paciente não encontrado."));
-            existente.setPaciente(paciente);
-        }
-
-        // Troca de Psicologo (se veio id)
-        if (atualizacao.getPsicologo() != null && atualizacao.getPsicologo().getId() != null) {
-            Psicologo psicologo = psicologoRepository.findById(atualizacao.getPsicologo().getId())
-                    .orElseThrow(() -> new IllegalArgumentException("Psicólogo não encontrado."));
-            existente.setPsicologo(psicologo);
-        }
-
-        Consulta salvo = consultaRepository.save(existente);
-
-        // Escolha simples de notificação: se mudou data/hora -> remarcação; se mudou status -> confirmação genérica
-        try {
-            if (atualizacao.getDataHora() != null) {
-                notificacaoEmailService.enviarRemarcacao(salvo);
-            } else if (atualizacao.getStatus() != null) {
-                notificacaoEmailService.enviarConfirmacao(salvo);
+            // normalizações amigáveis
+            if ("PENDENTE".equals(raw)) {
+                raw = "AGENDADA";
             }
-        } catch (RuntimeException ex) {
-            log.error("Falha ao enviar notificação na atualização: {}", ex.getMessage(), ex);
+
+            try {
+                c.setStatus(Consulta.StatusConsulta.valueOf(raw));
+            } catch (IllegalArgumentException ex) {
+                throw new IllegalArgumentException(
+                        "Status inválido: " + dto.status() +
+                                ". Use: AGENDADA, CONFIRMADA, REMARCADA, CANCELADA ou CONCLUIDA."
+                );
+            }
         }
 
-        return salvo;
+        if (dto.observacoes() != null) {
+            c.setObservacoes(dto.observacoes());
+        }
+
+        return consultaRepository.save(c);
     }
 
-    /**
-     * Deleta consulta por ID (usado pelo Controller).
-     */
     @Transactional
     public void deletar(Long id) {
-        if (id == null) {
-            throw new IllegalArgumentException("Id da consulta é obrigatório.");
-        }
-        if (!consultaRepository.existsById(id)) {
-            // idempotente: não explode se já não existir
-            return;
-        }
-        // Opcional: enviar cancelamento antes/após excluir (requer carregar a entidade)
-        // Consulta c = consultaRepository.findById(id).orElse(null);
         consultaRepository.deleteById(id);
-        // try { if (c != null) notificacaoEmailService.enviarCancelamento(c); } catch (RuntimeException ex) { ... }
-    }
-
-    // ---------- Helpers ----------
-
-    private void validarRequisitosBasicos(Consulta consulta) {
-        if (consulta == null) {
-            throw new IllegalArgumentException("Consulta não pode ser nula.");
-        }
-        if (consulta.getPaciente() == null || consulta.getPaciente().getId() == null) {
-            throw new IllegalArgumentException("Paciente é obrigatório.");
-        }
-        if (consulta.getPsicologo() == null || consulta.getPsicologo().getId() == null) {
-            throw new IllegalArgumentException("Psicólogo é obrigatório.");
-        }
     }
 }

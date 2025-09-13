@@ -6,6 +6,6 @@ import java.time.OffsetDateTime;
 public record ConsultaRequestDTO(
         Long pacienteId,
         Long psicologoId,
-        OffsetDateTime dataHora,
+        String dataHora,
         String observacoes
 ) {}

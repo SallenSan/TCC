@@ -97,6 +97,7 @@
         <select id="conPac" required><option value="">Paciente</option></select>
         <select id="conPsi" required><option value="">Psicólogo</option></select>
         <input type="datetime-local" id="conData" required>
+        <!-- status não entra no POST (DTO de criação não tem status) -->
         <select id="conStatus" required>
           <option value="PENDENTE">PENDENTE</option>
           <option value="CONFIRMADA">CONFIRMADA</option>
@@ -123,8 +124,10 @@
     const msg = (t, ok=true) => { const el=$id('msg'); el.innerHTML = t ? `<b class="${ok?'ok':'err'}">${t}</b>` : ''; if(t) setTimeout(()=>{el.innerHTML='';}, 2400); };
     const csv = rows => rows.map(r=>r.map(v=>`"${String(v??'').replaceAll('"','""')}"`).join(',')).join('\n');
     const download=(filename,text)=>{ const blob=new Blob([text],{type:'text/csv'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; a.click(); URL.revokeObjectURL(a.href); };
+    const pad=n=>String(n).padStart(2,'0');
+    const nowLocalForInput=(d=new Date())=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 
-    // ====== Gate de acesso: precisa role=Admin e e-mail existir em /usuario-admin ======
+    // ====== Gate ======
     $id('emailSpan').textContent = email || '—';
     $id('logoutBtn').onclick = () => { localStorage.clear(); location.href='index.html'; };
 
@@ -154,7 +157,7 @@
         if(!rp.ok||!rpsi.ok||!rc.ok) throw new Error('Falha ao buscar dados.');
         pacientes = await rp.json();
         psicologos = await rpsi.json();
-        consultas  = await rc.json();
+        consultas  = await rc.json(); // ConsultaResponseDTO (plano)
         fillPac(); fillPsi(); fillCon(); fillSelects();
       }catch(e){ msg('Erro ao carregar dados.', false); }
     }
@@ -276,14 +279,15 @@
 
     function fillCon(){
       const tb = $id('tbCon'); tb.innerHTML='';
+      // ConsultaResponseDTO plano
       (consultas||[]).slice().sort((a,b)=> new Date(a.dataHora)-new Date(b.dataHora))
       .forEach(c=>{
         const tr=document.createElement('tr');
         tr.innerHTML = `
           <td>${c.id}</td>
           <td>${c.dataHora ? new Date(c.dataHora).toLocaleString('pt-BR') : '-'}</td>
-          <td>${c.paciente?.nome ?? ('ID '+(c.paciente?.id ?? ''))}</td>
-          <td>${c.psicologo?.nome ?? ('ID '+(c.psicologo?.id ?? ''))}</td>
+          <td>${c.pacienteNome || '-'}</td>
+          <td>${c.psicologoNome || '-'}</td>
           <td><span class="tag">${c.status||'PENDENTE'}</span></td>
           <td>${c.observacoes||''}</td>
           <td>
@@ -293,17 +297,29 @@
         tb.appendChild(tr);
       });
 
+      // Editar -> PUT com ConsultaUpdateDTO
       tb.querySelectorAll('[data-e]').forEach(b=> b.onclick = ()=>{
         const id=+b.dataset.e; const c=consultas.find(x=>x.id===id);
-        const data = prompt('Data/hora (AAAA-MM-DDTHH:MM):', c.dataHora? c.dataHora.slice(0,16).replace('Z',''):''); if(data===null) return;
-        const status = prompt('Status (PENDENTE/CONFIRMADA/CANCELADA/REMARCADA):', c.status||'PENDENTE'); if(status===null) return;
-        const obs = prompt('Observações:', c.observacoes||''); if(obs===null) return;
+        const data = prompt('Nova data/hora (AAAA-MM-DDTHH:MM):', c.dataHora? c.dataHora.slice(0,16).replace('Z',''):'');
+        const status = prompt('Status (PENDENTE/CONFIRMADA/CANCELADA/REMARCADA):', c.status||'PENDENTE');
+        const obs = prompt('Observações:', c.observacoes||'');
+        if(data===null && status===null && obs===null) return;
+
+        // *** ENVIE APENAS CAMPOS ALTERADOS — e SEM toISOString()
+        const dto = {};
+        if(data && data !== c.dataHora?.slice(0,16)) dto.dataHora = data;           // string local YYYY-MM-DDTHH:MM
+        if(status && status !== c.status) dto.status = status;
+        if(obs !== null && obs !== c.observacoes) dto.observacoes = obs;
+
+        if(Object.keys(dto).length===0){ msg('Nada para atualizar.'); return; }
+
         fetch(`${API}/consultas/${id}`,{
           method:'PUT', headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({...c, dataHora:data? new Date(data).toISOString():c.dataHora, status, observacoes:obs})
-        }).then(r=> r.ok ? (msg('Consulta atualizada'), loadAll()) : msg('Falha ao atualizar', false));
+          body:JSON.stringify(dto)
+        }).then(r=> r.ok ? (msg('Consulta atualizada'), loadAll()) : r.text().then(t=>msg('Falha ao atualizar: '+t, false)));
       });
 
+      // Excluir
       tb.querySelectorAll('[data-d]').forEach(b=> b.onclick = ()=>{
         const id=+b.dataset.d; if(!confirm('Excluir consulta?')) return;
         fetch(`${API}/consultas/${id}`,{method:'DELETE'})
@@ -311,17 +327,32 @@
       });
     }
 
+    // *** POST /consultas -> ConsultaRequestDTO (sem status) e SEM toISOString()
     $id('conForm').addEventListener('submit', e=>{
       e.preventDefault();
       const pid=+$id('conPac').value;
       const psid=+$id('conPsi').value;
-      const data=$id('conData').value;
-      const status=$id('conStatus').value;
+      const data=$id('conData').value;           // <- string local "YYYY-MM-DDTHH:MM"
+      const /*status*/ _status=$id('conStatus').value; // visual apenas; backend não usa no POST
       const obs=$id('conObs').value.trim();
       if(!pid||!psid||!data){ msg('Preencha paciente, psicólogo e data/hora.', false); return; }
-      const payload = { paciente:{id:pid}, psicologo:{id:psid}, dataHora:new Date(data).toISOString(), status, observacoes: obs||null };
+
+      const payload = {
+        pacienteId: pid,
+        psicologoId: psid,
+        dataHora: data,              // *** sem toISOString()
+        observacoes: obs || null
+      };
+
       fetch(API+'/consultas',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)})
-        .then(r=> r.ok ? (msg('Consulta agendada'), e.target.reset(), loadAll()) : msg('Erro ao agendar consulta', false));
+        .then(async r=>{
+          if(r.ok){ msg('Consulta agendada'); e.target.reset(); // reimpõe o min depois do reset
+            $id('conData').min = nowLocalForInput(); loadAll();
+          } else {
+            const t = await r.text().catch(()=> String(r.status));
+            msg('Erro ao agendar consulta: '+t, false);
+          }
+        });
     });
 
     $id('expCon').onclick=()=>download('consultas.csv',
@@ -329,15 +360,19 @@
            ...consultas.map(c=>[
              c.id,
              c.dataHora,
-             c.paciente?.nome || c.paciente?.id || '',
-             c.psicologo?.nome || c.psicologo?.id || '',
+             c.pacienteNome || '',
+             c.psicologoNome || '',
              c.status||'',
              c.observacoes||''
            ])])
     );
 
     // ====== Boot ======
-    (async function start(){ await loadAll(); })();
+    (async function start(){
+      // *** evita enviar passado (casa com @FutureOrPresent)
+      $id('conData').min = nowLocalForInput();
+      await loadAll();
+    })();
   </script>
 </body>
 </html>
