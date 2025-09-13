@@ -1,14 +1,14 @@
-// src/main/java/com/tcc/consultas/dto/ConsultaUpdateDTO.java
 package com.tcc.consultas.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 /**
- * Para reagendar/alterar observações e (opcionalmente) status.
- * Caso não queira permitir alteração de status aqui, remova o campo status.
+ * Para reagendar/alterar observações e (opcional) status.
  */
 public record ConsultaUpdateDTO(
-        LocalDateTime dataHora,
+        OffsetDateTime dataHora,
         String observacoes,
-        String status // opcional: "AGENDADA", "CANCELADA", "CONCLUIDA"
+        String status // "AGENDADA", "CANCELADA", "CONCLUIDA" (opcional)
 ) {}

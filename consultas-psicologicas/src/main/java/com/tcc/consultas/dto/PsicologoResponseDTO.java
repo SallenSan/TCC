@@ -5,5 +5,6 @@ public record PsicologoResponseDTO(
         String nome,
         String email,
         String telefone,
+        String crp,
         String especialidade
 ) {}

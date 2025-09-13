@@ -1,105 +1,27 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-
 <head>
   <meta charset="UTF-8">
   <title>Paciente • Minhas Consultas</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    body {
-      font-family: Arial, Helvetica, sans-serif;
-      background: #f9f6fc;
-      margin: 0;
-      padding: 20px;
-      color: #2d2a32
-    }
-
-    h1 {
-      text-align: center;
-      color: #5e4b8a
-    }
-
-    nav {
-      text-align: center;
-      margin-bottom: 20px
-    }
-
-    nav button {
-      margin: 0 6px;
-      padding: 10px 14px;
-      background: #c8a2c8;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer
-    }
-
-    nav button:hover {
-      background: #b089b0
-    }
-
-    .container {
-      max-width: 1100px;
-      margin: auto;
-      background: #fff;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, .08)
-    }
-
-    .row {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-bottom: 12px
-    }
-
-    input,
-    select {
-      padding: 10px;
-      border: 1px solid #d7cfe4;
-      border-radius: 8px
-    }
-
-    .btn {
-      padding: 10px 14px;
-      background: #c8a2c8;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      font-weight: 700
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse
-    }
-
-    th,
-    td {
-      border-bottom: 1px solid #eee;
-      padding: 10px;
-      text-align: left
-    }
-
-    .ok {
-      color: #1e9e63
-    }
-
-    .err {
-      color: #c0392b
-    }
-
-    .card {
-      background: #fff;
-      border: 1px solid #eee;
-      border-radius: 12px;
-      padding: 14px;
-      margin: 14px 0
-    }
+    body{font-family:Arial,Helvetica,sans-serif;background:#f9f6fc;margin:0;padding:20px;color:#2d2a32}
+    h1{text-align:center;color:#5e4b8a}
+    nav{text-align:center;margin-bottom:20px}
+    nav button{margin:0 6px;padding:10px 14px;background:#c8a2c8;color:#fff;border:none;border-radius:8px;cursor:pointer}
+    nav button:hover{background:#b089b0}
+    .container{max-width:1100px;margin:auto;background:#fff;padding:20px;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.08)}
+    .row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+    input,select{padding:10px;border:1px solid #d7cfe4;border-radius:8px}
+    .btn{padding:10px 14px;background:#c8a2c8;color:#fff;border:none;border-radius:8px;font-weight:700}
+    table{width:100%;border-collapse:collapse}
+    th,td{border-bottom:1px solid #eee;padding:10px;text-align:left}
+    .ok{color:#1e9e63}
+    .err{color:#c0392b}
+    .card{background:#fff;border:1px solid #eee;border-radius:12px;padding:14px;margin:14px 0}
+    .muted{color:#777}
   </style>
 </head>
-
 <body>
   <h1>Portal do Paciente</h1>
   <nav>
@@ -150,66 +72,181 @@
     const API = 'http://localhost:8080';
     const email = (localStorage.getItem('email') || '').toLowerCase();
     document.getElementById('emailSpan').textContent = email || '(não definido)';
-    const msg = (t, ok = true) => { const el = document.getElementById('msg'); el.innerHTML = `<b class="${ok ? 'ok' : 'err'}">${t}</b>`; setTimeout(() => el.textContent = '', 2200); };
-    const toIso = l => new Date(l).toISOString();
 
-    let paciente = null, psicologos = [], consultas = [];
-    async function resolvePaciente() {
-      const res = await fetch(API + '/pacientes'); const arr = await res.json();
-      paciente = arr.find(p => (p.email || '').toLowerCase() === email);
-      if (!paciente) { alert('Seu e-mail não está cadastrado como paciente.'); location.href = 'index.html'; }
-    }
-    async function loadPsicologos() {
-      const r = await fetch(API + '/psicologos'); psicologos = await r.json();
-      psicologo.innerHTML = '<option value="">Psicólogo</option>' + psicologos.map(p => `<option value="${p.id}">${p.nome}</option>`).join('');
-    }
-    async function loadMinhas() {
-      const r = await fetch(API + '/consultas'); const all = await r.json();
-      consultas = all.filter(c => c.paciente?.id === paciente.id);
-      render();
-    }
-    function render() {
-      const tb = document.getElementById('tbody'); tb.innerHTML = '';
-      consultas.sort((a, b) => new Date(a.dataHora) - new Date(b.dataHora))
-        .forEach(c => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `<td>${new Date(c.dataHora).toLocaleString('pt-BR')}</td>
-          <td>${c.psicologo?.nome || ('ID ' + c.psicologo?.id)}</td>
-          <td>${c.status}</td><td>${c.observacoes || ''}</td>`;
-          tb.appendChild(tr);
-        });
-    }
-
-    // alterar senha paciente
-    btnSenha.onclick = async () => {
-      const atual = sAtual.value, nova = sNova.value, conf = sConf.value;
-      if (!nova || nova !== conf) { msg('Nova senha inválida ou diferente da confirmação', false); return; }
-      try {
-        const me = paciente; // já resolvido
-        if ('senha' in me && me.senha) { if (atual !== me.senha) { msg('Senha atual incorreta', false); return; } }
-        const payload = { ...me, senha: nova };
-        const up = await fetch(`${API}/pacientes/${me.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-        if (up.ok) { msg('Senha atualizada!'); sAtual.value = sNova.value = sConf.value = ''; }
-        else msg('Falha ao atualizar senha', false);
-      } catch { msg('Erro de comunicação', false); }
+    const $msg = document.getElementById('msg');
+    const showMsg = (t, ok = true) => {
+      $msg.innerHTML = `<b class="${ok ? 'ok' : 'err'}">${t}</b>`;
+      setTimeout(() => $msg.textContent = '', 2200);
     };
 
-    // solicitar consulta
-    document.getElementById('form').addEventListener('submit', async e => {
-      e.preventDefault(); const b = solicitar; b.disabled = true;
-      if (!psicologo.value || !dataHora.value) { msg('Escolha psicólogo e data/hora', false); b.disabled = false; return; }
-      const payload = { paciente: { id: paciente.id }, psicologo: { id: +psicologo.value }, dataHora: toIso(dataHora.value), status: 'PENDENTE', observacoes: obs.value.trim() || null };
-      const r = await fetch(API + '/consultas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-      if (r.ok) { msg('Solicitação enviada! (e-mail será enviado)'); e.target.reset(); loadMinhas(); } else msg('Erro ao solicitar', false);
-      b.disabled = false;
+    // Helpers
+    function toLocalDateTimeInputValue(d = new Date()) {
+      const pad = n => String(n).padStart(2, '0');
+      const yyyy = d.getFullYear();
+      const mm = pad(d.getMonth() + 1);
+      const dd = pad(d.getDate());
+      const hh = pad(d.getHours());
+      const mi = pad(d.getMinutes());
+      return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
+    }
+
+    // Estado
+    let paciente = null;
+    let psicologos = [];
+    let minhasConsultas = [];
+
+    // Carrega paciente da lista (DTO plano) pelo e-mail salvo
+    async function resolvePaciente() {
+      const resp = await fetch(`${API}/pacientes`);
+      if (!resp.ok) throw new Error('Falha ao carregar pacientes');
+      const lista = await resp.json();
+      paciente = (lista || []).find(p => (p.email || '').toLowerCase() === email);
+      if (!paciente) {
+        alert('Seu e-mail não está cadastrado como paciente.');
+        location.href = 'index.html';
+      }
+    }
+
+    async function loadPsicologos() {
+      const resp = await fetch(`${API}/psicologos`);
+      if (!resp.ok) throw new Error('Falha ao carregar psicólogos');
+      psicologos = await resp.json();
+      const sel = document.getElementById('psicologo');
+      sel.innerHTML = '<option value="">Psicólogo</option>' +
+        psicologos.map(p => `<option value="${p.id}">${p.nome}</option>`).join('');
+    }
+
+    // /consultas agora devolve ConsultaResponseDTO (sem objetos aninhados)
+    // Vamos filtrar pelo nome do paciente (workaround seguro enquanto o DTO não expõe pacienteId)
+    async function loadMinhas() {
+      const resp = await fetch(`${API}/consultas`);
+      if (!resp.ok) throw new Error('Falha ao carregar consultas');
+      const todas = await resp.json();
+      const meuNome = paciente?.nome || '';
+      minhasConsultas = (todas || []).filter(c => (c.pacienteNome || '') === meuNome);
+      renderTabela();
+    }
+
+    function renderTabela() {
+      const tb = document.getElementById('tbody');
+      tb.innerHTML = '';
+      if (!minhasConsultas.length) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = '<td colspan="4">Nenhuma consulta encontrada.</td>';
+        tb.appendChild(tr);
+        return;
+      }
+      // ordenar por data
+      minhasConsultas.sort((a, b) => new Date(a.dataHora) - new Date(b.dataHora));
+      for (const c of minhasConsultas) {
+        const tr = document.createElement('tr');
+        const dataFmt = c.dataHora ? new Date(c.dataHora).toLocaleString('pt-BR') : '-';
+        tr.innerHTML = `
+          <td>${dataFmt}</td>
+          <td>${c.psicologoNome || '-'}</td>
+          <td>${c.status || '-'}</td>
+          <td>${c.observacoes || ''}</td>
+        `;
+        tb.appendChild(tr);
+      }
+    }
+
+    // Alterar senha (PUT /pacientes/{id}) — mantém sua lógica atual
+    document.getElementById('btnSenha').onclick = async () => {
+      const atual = document.getElementById('sAtual').value;
+      const nova  = document.getElementById('sNova').value;
+      const conf  = document.getElementById('sConf').value;
+      if (!nova || nova !== conf) {
+        showMsg('Nova senha inválida ou diferente da confirmação', false);
+        return;
+      }
+      try {
+        const me = paciente;
+        if (me && 'senha' in me && me.senha && atual !== me.senha) {
+          showMsg('Senha atual incorreta', false);
+          return;
+        }
+        const payload = { ...me, senha: nova };
+        const up = await fetch(`${API}/pacientes/${me.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (up.ok) {
+          showMsg('Senha atualizada!');
+          document.getElementById('sAtual').value =
+          document.getElementById('sNova').value  =
+          document.getElementById('sConf').value  = '';
+        } else {
+          showMsg('Falha ao atualizar senha', false);
+        }
+      } catch {
+        showMsg('Erro de comunicação', false);
+      }
+    };
+
+    // Solicitar consulta — envia ConsultaRequestDTO (ids + dataHora como string local "YYYY-MM-DDTHH:mm")
+    document.getElementById('form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('solicitar');
+      btn.disabled = true;
+
+      const selPsi  = document.getElementById('psicologo');
+      const dataInp = document.getElementById('dataHora');
+      const obs     = document.getElementById('obs');
+
+      if (!selPsi.value || !dataInp.value) {
+        showMsg('Escolha psicólogo e data/hora', false);
+        btn.disabled = false;
+        return;
+      }
+
+      // Importante: NÃO usar toISOString/Z; mande a string local do input (casa com LocalDateTime no backend)
+      const payload = {
+        pacienteId: paciente.id,
+        psicologoId: Number(selPsi.value),
+        dataHora: dataInp.value,        // ex: "2025-09-12T10:30"
+        observacoes: obs.value.trim() || null
+      };
+
+      try {
+        const r = await fetch(`${API}/consultas`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (r.ok) {
+          showMsg('Solicitação enviada! (um e-mail será disparado)');
+          e.target.reset();
+          // reatribuir min após reset
+          dataInp.min = toLocalDateTimeInputValue(new Date());
+          await loadMinhas();
+        } else {
+          const txt = await r.text().catch(() => '');
+          showMsg('Erro ao solicitar: ' + (txt || r.status), false);
+        }
+      } catch {
+        showMsg('Erro de comunicação', false);
+      } finally {
+        btn.disabled = false;
+      }
     });
 
+    // bootstrap
     (async function start() {
-      await resolvePaciente();
-      await loadPsicologos();
-      await loadMinhas();
+      // força seleção de data futura (alinha com @FutureOrPresent do backend)
+      const dh = document.getElementById('dataHora');
+      dh.min = toLocalDateTimeInputValue(new Date());
+
+      try {
+        await resolvePaciente();
+        await loadPsicologos();
+        await loadMinhas();
+      } catch (e) {
+        console.error(e);
+        showMsg('Falha ao conectar ao backend.', false);
+      }
     })();
   </script>
 </body>
-
 </html>

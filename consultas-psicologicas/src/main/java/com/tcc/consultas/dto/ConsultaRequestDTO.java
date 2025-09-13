@@ -1,10 +1,11 @@
+// ConsultaRequestDTO.java
 package com.tcc.consultas.dto;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 public record ConsultaRequestDTO(
         Long pacienteId,
         Long psicologoId,
-        LocalDateTime dataHora,
+        OffsetDateTime dataHora,
         String observacoes
 ) {}
