@@ -2,7 +2,6 @@ package com.tcc.consultas.controller;
 
 import com.tcc.consultas.dto.ConsultaRequestDTO;
 import com.tcc.consultas.dto.ConsultaResponseDTO;
-import com.tcc.consultas.dto.ConsultaUpdateDTO;
 import com.tcc.consultas.model.Consulta;
 import com.tcc.consultas.model.Paciente;
 import com.tcc.consultas.model.Psicologo;

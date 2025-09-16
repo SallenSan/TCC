@@ -7,6 +7,7 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
   <style>
     :root{ --bg:#f9f6fc; --card:#fff; --text:#2d2a32; --muted:#6b6475; --primary:#c8a2c8; --primary-h:#b089b0; --line:#e8e2f1; --ok:#1e9e63; --err:#c0392b; --shadow:0 8px 24px rgba(0,0,0,.08); }
+    *{box-sizing:border-box}
     body{margin:0; font-family:Arial, Helvetica, sans-serif; background:var(--bg); color:var(--text)}
     header{display:flex; align-items:center; justify-content:space-between; padding:14px 18px; background:var(--card); box-shadow:var(--shadow); position:sticky; top:0; z-index:5;}
     .brand{font-weight:800; color:#5e4b8a}
@@ -68,7 +69,7 @@
             <th>Paciente</th>
             <th>Status</th>
             <th>Observações</th>
-            <th style="width:160px">Ações</th>
+            <th style="width:200px">Ações</th>
           </tr>
         </thead>
         <tbody id="tbConsultas"></tbody>
@@ -109,8 +110,8 @@
     const API='http://localhost:8080';
 
     // --- sessão Psicólogo ---
-    const role = localStorage.getItem('role');
-    const email = (localStorage.getItem('email')||'').toLowerCase();
+    const role = (localStorage.getItem('role')||'').trim();
+    const email = (localStorage.getItem('email')||'').trim().toLowerCase();
     if(role!=='Psicologo'){ location.href='index.html'; }
     document.getElementById('sessEmail').textContent = email || '—';
 
@@ -120,7 +121,7 @@
       el.textContent=t;
       el.style.display='block';
       el.style.border='1px solid '+(ok?'#1e9e63':'#c0392b');
-      setTimeout(()=>el.style.display='none',2200);
+      setTimeout(()=>el.style.display='none',2600);
     };
     perfilBtn.onclick=()=>{ perfilDrop.style.display = perfilDrop.style.display==='block' ? 'none' : 'block'; };
     document.addEventListener('click', (e)=>{ if(!e.target.closest('.menu')) perfilDrop.style.display='none'; });
@@ -133,36 +134,57 @@
       const r=await fetch(API+'/psicologos');
       if(!r.ok){ toast('Falha ao buscar psicólogos', false); return; }
       const lista=await r.json();
-      ME = lista.find(p => (p.email||'').toLowerCase()===email);
-      if(!ME){ alert('Psicólogo não encontrado pelo e-mail da sessão.'); localStorage.clear(); location.href='index.html'; }
+      ME = (lista||[]).find(p => (p.email||'').toLowerCase()===email) || null;
+      if(!ME){
+        alert('Psicólogo não encontrado pelo e-mail da sessão.');
+        localStorage.clear(); location.href='index.html';
+      }
     }
 
-    // /consultas retorna ConsultaResponseDTO: {id, pacienteNome, psicologoNome, dataHora, status, observacoes}
-    async function loadConsultas(){
-      const r=await fetch(API+'/consultas');
-      if(!r.ok){ toast('Falha ao carregar consultas', false); return; }
-      const all=await r.json();
-      consultas = (all||[]).filter(c => (c.psicologoNome||'') === (ME?.nome||''));
-      renderTable();
+    // função segura p/ exibir data (não converte para outro formato ao enviar)
+    function formatLocalDateTime(isoOrLocal){
+      if(!isoOrLocal) return '-';
+      // aceita "YYYY-MM-DDTHH:mm" (local) ou ISO com/sem offset
+      const d = new Date(isoOrLocal);
+      if (isNaN(d)) {
+        // tenta tratar como string local simples
+        return isoOrLocal.replace('T',' ');
+      }
+      return d.toLocaleString('pt-BR');
     }
 
-    function toLocal(iso){
-      if(!iso) return '-';
-      const d=new Date(iso);
-      const pad=n=>String(n).padStart(2,'0');
-      return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-    }
-
+    // Aceita filtros por data (somente dia, local)
     function applyFilter(list){
-      const ini = fIni.value ? new Date(fIni.value) : null;
-      const fim = fFim.value ? new Date(fFim.value) : null;
+      const ini = fIni.value ? new Date(fIni.value+'T00:00') : null;
+      const fim = fFim.value ? new Date(fFim.value+'T23:59') : null;
       return list.filter(c=>{
         if(!c.dataHora) return true;
         const d=new Date(c.dataHora);
         if(ini && d<ini) return false;
-        if(fim){ const f=new Date(fim); f.setDate(f.getDate()+1); if(d>=f) return false; }
+        if(fim && d>fim) return false;
         return true;
       }).sort((a,b)=> new Date(a.dataHora)-new Date(b.dataHora));
+    }
+
+    // /consultas pode retornar DTO "achatado" ou entidades aninhadas
+    async function loadConsultas(){
+      const r=await fetch(API+'/consultas');
+      if(!r.ok){
+        const t=await r.text().catch(()=>r.status);
+        toast('Falha ao carregar consultas: '+t, false);
+        return;
+      }
+      const all=await r.json();
+      const mapped = (all||[]).map(x=>({
+        id: x.id,
+        dataHora: x.dataHora || null,
+        status: x.status || 'PENDENTE',
+        observacoes: x.observacoes || '',
+        pacienteNome: x.pacienteNome ?? x.paciente?.nome ?? '-',
+        psicologoNome: x.psicologoNome ?? x.psicologo?.nome ?? '-'
+      }));
+      consultas = mapped.filter(c => (c.psicologoNome||'') === (ME?.nome||''));
+      renderTable();
     }
 
     function renderTable(){
@@ -175,7 +197,7 @@
       data.forEach(c=>{
         const tr=document.createElement('tr');
         tr.innerHTML=`
-          <td>${toLocal(c.dataHora)}</td>
+          <td>${formatLocalDateTime(c.dataHora)}</td>
           <td>${c.pacienteNome || '-'}</td>
           <td><span class="tag">${c.status||'PENDENTE'}</span></td>
           <td>
@@ -183,30 +205,51 @@
             <button class="btn secondary" data-obs="${c.id}" style="margin-top:6px"><i class="fa-solid fa-pen"></i> Obs.</button>
           </td>
           <td>
-            <button class="btn" data-ok="${c.id}"><i class="fa-solid fa-check"></i> Confirmar</button>
-            <button class="btn secondary" data-rem="${c.id}"><i class="fa-solid fa-arrows-rotate"></i> Remarcar</button>
-            <button class="btn err" data-can="${c.id}"><i class="fa-solid fa-ban"></i> Cancelar</button>
+            <div class="row" style="gap:6px; flex-wrap:nowrap">
+              <button class="btn" data-ok="${c.id}"><i class="fa-solid fa-check"></i> Confirmar</button>
+              <button class="btn secondary" data-rem="${c.id}"><i class="fa-solid fa-arrows-rotate"></i> Remarcar</button>
+              <button class="btn err" data-can="${c.id}"><i class="fa-solid fa-ban"></i> Cancelar</button>
+            </div>
           </td>`;
         tb.appendChild(tr);
       });
 
+      // handlers
       tb.querySelectorAll('[data-obs]').forEach(b=> b.onclick=()=>{
         const id=+b.dataset.obs; const c=consultas.find(x=>x.id===id);
         obsId.value=c.id; obsTexto.value=c.observacoes||''; window.scrollTo({top:document.body.scrollHeight, behavior:'smooth'});
       });
-      tb.querySelectorAll('[data-ok]').forEach(b=> b.onclick=()=> updateStatus(+b.dataset.ok,'CONFIRMADA'));
-      tb.querySelectorAll('[data-can]').forEach(b=> b.onclick=()=> updateStatus(+b.dataset.can,'CANCELADA'));
-      tb.querySelectorAll('[data-rem]').forEach(b=> b.onclick=()=>{
+
+      tb.querySelectorAll('[data-ok]').forEach(b=> b.onclick=async ()=>{
+        const id=+b.dataset.ok; await guardedUpdate(b, ()=> updateStatus(id,'CONFIRMADA'));
+      });
+      tb.querySelectorAll('[data-can]').forEach(b=> b.onclick=async ()=>{
+        const id=+b.dataset.can; await guardedUpdate(b, ()=> updateStatus(id,'CANCELADA'));
+      });
+      tb.querySelectorAll('[data-rem]').forEach(b=> b.onclick=async ()=>{
         const id=+b.dataset.rem; const c=consultas.find(x=>x.id===id);
-        const base = c.dataHora ? c.dataHora.slice(0,16) : '';
-        const novo = prompt('Nova data/hora (AAAA-MM-DDTHH:MM):', base.replace('Z',''));
+        const base = c?.dataHora ? String(c.dataHora).slice(0,16).replace('Z','') : '';
+        const novo = prompt('Nova data/hora (AAAA-MM-DDTHH:MM):', base);
         if(!novo) return;
-        // IMPORTANTE: enviar string local (sem Z) para casar com LocalDateTime
-        updateConsultaDTO(id, { dataHora: novo });
+        // valida formato "YYYY-MM-DDTHH:mm"
+        if(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(novo)){
+          toast('Formato inválido. Use AAAA-MM-DDTHH:MM', false);
+          return;
+        }
+        await guardedUpdate(b, ()=> updateConsultaDTO(id, { dataHora: novo, status: 'REMARCADA' }));
       });
     }
 
-    // Atualizações via ConsultaUpdateDTO
+    async function guardedUpdate(button, fn){
+      try{
+        button.disabled = true;
+        await fn();
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    // Atualizações via ConsultaUpdateDTO (parciais)
     async function updateStatus(id, status){
       await updateConsultaDTO(id, { status });
     }
@@ -215,18 +258,27 @@
       const r=await fetch(`${API}/consultas/${id}`,{
         method:'PUT',
         headers:{'Content-Type':'application/json'},
-        body:JSON.stringify(dtoParcial) // { status } OU { dataHora } OU { observacoes }
+        body:JSON.stringify(dtoParcial)
       });
-      if(r.ok){ toast('Consulta atualizada'); await loadConsultas(); }
-      else { const t=await r.text().catch(()=>r.status); toast('Falha ao atualizar: '+t, false); }
+      if(r.ok){
+        toast('Consulta atualizada');
+        await loadConsultas();
+      } else {
+        let t='';
+        try{ t=await r.text(); }catch{ t=String(r.status); }
+        toast('Falha ao atualizar: '+(t||r.status), false);
+      }
     }
 
     // Observações
     obsSalvar.onclick=async ()=>{
       const id=Number(obsId.value);
       if(!id){ toast('Selecione uma consulta', false); return; }
-      await updateConsultaDTO(id, { observacoes: obsTexto.value });
-      obsTexto.value=''; obsId.value='';
+      const btn = obsSalvar;
+      await guardedUpdate(btn, async ()=> {
+        await updateConsultaDTO(id, { observacoes: obsTexto.value });
+        obsTexto.value=''; obsId.value='';
+      });
     };
     obsLimpar.onclick=()=>{ obsTexto.value=''; obsId.value=''; };
 
@@ -244,7 +296,11 @@
         const up=await fetch(`${API}/psicologos/${ME.id}`,{
           method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)
         });
-        if(up.ok){ toast('Senha atualizada!'); dlgSenha.close(); } else toast('Falha ao atualizar senha', false);
+        if(up.ok){ toast('Senha atualizada!'); dlgSenha.close(); }
+        else {
+          const t=await up.text().catch(()=>up.status);
+          toast('Falha ao atualizar senha: '+t, false);
+        }
       }catch{ toast('Erro de comunicação', false); }
     };
 
@@ -252,7 +308,10 @@
       try{
         await resolvePsicologo();
         if(ME) await loadConsultas();
-      }catch(e){ console.error(e); toast('Falha ao conectar ao backend.', false); }
+      }catch(e){
+        console.error(e);
+        toast('Falha ao conectar ao backend.', false);
+      }
     })();
   </script>
 </body>
